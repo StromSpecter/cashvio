@@ -1,4 +1,4 @@
-import { Route, Routes } from "react-router"
+import { Route, Routes, Navigate } from "react-router"
 import { BudgetPage } from "./pages/dashboard/BudgetPage"
 import SigninPage from "./pages/auth/SigninPage"
 import SignupPage from "./pages/auth/SignupPage"
@@ -12,6 +12,7 @@ function App() {
   return (
     <>
       <Routes>
+        <Route path="/" element={<Navigate to="/signin" replace />} />
         <Route path="/signin" element={<SigninPage />} />
         <Route path="/signup" element={<SignupPage />} />
         <Route element={<DashboardLayout />}>
@@ -19,9 +20,10 @@ function App() {
           <Route path="/dashboard/budget" element={<BudgetPage />} />
           <Route path="/dashboard/wallets" element={<WalletsPage />} />
           <Route path="/dashboard/cards" element={<CardsPage />} />
-          <Route path="/dashboard/transactions" element={<TransactionsPage />} />
-        </Route>
-      </Routes>
+            <Route path="/dashboard/transactions" element={<TransactionsPage />} />
+          </Route>
+          <Route path="*" element={<Navigate to="/signin" replace />} />
+        </Routes>
     </>
   )
 }
