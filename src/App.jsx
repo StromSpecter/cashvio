@@ -1,4 +1,5 @@
 import { Route, Routes } from "react-router"
+import { BudgetPage } from "./pages/dashboard/BudgetPage"
 import SigninPage from "./pages/auth/SigninPage"
 import SignupPage from "./pages/auth/SignupPage"
 import { DashboardLayout } from "./layouts/DashboardLayout"
@@ -15,6 +16,7 @@ function App() {
         <Route path="/signup" element={<SignupPage />} />
         <Route element={<DashboardLayout />}>
           <Route path="/dashboard" element={<DashboardPage />} />
+          <Route path="/dashboard/budget" element={<BudgetPage />} />
           <Route path="/dashboard/wallets" element={<WalletsPage />} />
           <Route path="/dashboard/cards" element={<CardsPage />} />
           <Route path="/dashboard/transactions" element={<TransactionsPage />} />
