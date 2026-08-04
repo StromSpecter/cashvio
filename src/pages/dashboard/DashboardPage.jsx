@@ -21,9 +21,9 @@ import { RadialChart } from '../../components/ui/chart'
 
 const stats = [
   { label: 'Total Balance', value: 'Rp24.562.800', change: '+12.4%', icon: Wallet, up: true },
-  { label: 'Pemasukan', value: 'Rp8.420.000', change: '+4.1%', icon: ArrowDownToLine, up: true },
-  { label: 'Pengeluaran', value: 'Rp3.215.600', change: '-2.3%', icon: ArrowUpFromLine, up: false },
-  { label: 'Kartu Aktif', value: '2', change: '+1 bulan ini', icon: TrendingUp, up: true },
+  { label: 'Income', value: 'Rp8.420.000', change: '+4.1%', icon: ArrowDownToLine, up: true },
+  { label: 'Expenses', value: 'Rp3.215.600', change: '-2.3%', icon: ArrowUpFromLine, up: false },
+  { label: 'Active Cards', value: '2', change: '+1 this month', icon: TrendingUp, up: true },
 ]
 
 const formatRp = (value) => `Rp${value.toLocaleString('id-ID')}`
@@ -47,8 +47,8 @@ const balanceRanges = {
 }
 
 const balanceConfig = {
-  income: { label: 'Pemasukan', color: 'var(--color-chart-2)' },
-  expense: { label: 'Pengeluaran', color: 'var(--color-destructive)' },
+  income: { label: 'Income', color: 'var(--color-chart-2)' },
+  expense: { label: 'Expenses', color: 'var(--color-destructive)' },
 }
 
 const spending = [
@@ -71,8 +71,8 @@ const cashFlowData = [
 ]
 
 const cashFlowConfig = {
-  income: { label: 'Pemasukan', color: 'var(--color-chart-2)' },
-  expense: { label: 'Pengeluaran', color: 'var(--color-destructive)' },
+  income: { label: 'Income', color: 'var(--color-chart-2)' },
+  expense: { label: 'Expenses', color: 'var(--color-destructive)' },
 }
 
 const columns = [
@@ -236,7 +236,7 @@ export function DashboardPage() {
           <CardHeader className="flex flex-row items-center justify-between space-y-0">
             <div>
               <CardTitle>Balance Overview</CardTitle>
-              <CardDescription>Arus pemasukan dan pengeluaran untuk {range}</CardDescription>
+              <CardDescription>Income & expense trend for the last {range === '7d' ? '7 days' : range === '30d' ? '30 days' : '90 days'}</CardDescription>
             </div>
             <Tabs value={range} onValueChange={setRange}>
               <TabsList>
@@ -256,7 +256,7 @@ export function DashboardPage() {
         <Card>
           <CardHeader>
             <CardTitle>Spending by Category</CardTitle>
-            <CardDescription>Alokasi pengeluaran bulan ini</CardDescription>
+            <CardDescription>Where your money went this month</CardDescription>
           </CardHeader>
           <CardContent>
             <ChartContainer config={spendingConfig} formatValue={(v) => `${v}%`}>
@@ -275,7 +275,7 @@ export function DashboardPage() {
         <Card className="lg:col-span-2">
           <CardHeader>
             <CardTitle>Cash Flow</CardTitle>
-            <CardDescription>Perbandingan pemasukan vs pengeluaran per bulan</CardDescription>
+            <CardDescription>Income vs expenses per month</CardDescription>
           </CardHeader>
           <CardContent>
             <ChartContainer config={cashFlowConfig} formatValue={formatRp} className="h-64">
@@ -286,8 +286,8 @@ export function DashboardPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Budget Bulanan</CardTitle>
-            <CardDescription>Penggunaan budget hingga hari ini</CardDescription>
+            <CardTitle>Monthly Budget</CardTitle>
+            <CardDescription>Budget used up to today</CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col items-center gap-4">
             <ChartContainer

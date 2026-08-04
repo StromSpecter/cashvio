@@ -76,7 +76,7 @@ export function AddCardDialog({ open, onOpenChange, onSubmit }) {
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="add-card-balance">Saldo</Label>
+            <Label htmlFor="add-card-balance">Balance</Label>
             <Input
               id="add-card-balance"
               placeholder="e.g. 10000"

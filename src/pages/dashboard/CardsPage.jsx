@@ -112,8 +112,7 @@ function AccountFace({ account, showNumber, onToggleNumber, balance }) {
         </div>
         <div>
           <p className="text-[10px] uppercase tracking-wider text-white/70">
-            Saldo
-          </p>
+            Balance</p>
           <p className="mt-0.5 text-lg font-bold">{balance}</p>
         </div>
       </div>
@@ -228,7 +227,7 @@ export function CardsPage() {
     },
     {
       key: "balanceIdr",
-      header: "Saldo",
+      header: "Balance",
       sortable: true,
       searchable: false,
       align: "right",

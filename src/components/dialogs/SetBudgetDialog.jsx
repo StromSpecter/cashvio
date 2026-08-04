@@ -28,14 +28,14 @@ export function SetBudgetDialog({ open, onOpenChange, onSubmit, initialValue, mo
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{isEdit ? 'Edit Target Bulanan' : 'Set Target Bulanan'}</DialogTitle>
+          <DialogTitle>{isEdit ? 'Edit Monthly Target' : 'Set Monthly Target'}</DialogTitle>
           <DialogDescription>
-            {isEdit ? 'Perbarui target pendapatan bulanan budget.' : 'Tetapkan target pendapatan bulanan untuk perhitungan budget.'}
+            {isEdit ? 'Update your monthly income target for the 50/30/20 split.' : 'Set your monthly income to calculate the needs, wants, and investment split automatically.'}
           </DialogDescription>
         </DialogHeader>
         <form className="space-y-4" onSubmit={handleSubmit}>
           <div className="space-y-2">
-            <Label htmlFor="budget-amount">Target Pendapatan (Rp)</Label>
+            <Label htmlFor="budget-amount">Target Income (Rp)</Label>
             <Input
               id="budget-amount"
               placeholder="e.g. 8420000"
@@ -47,19 +47,19 @@ export function SetBudgetDialog({ open, onOpenChange, onSubmit, initialValue, mo
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="budget-note">Catatan (opsional)</Label>
+            <Label htmlFor="budget-note">Note (optional)</Label>
             <Input
               id="budget-note"
-              placeholder="e.g. Gaji bulanan"
+              placeholder="e.g. Monthly salary"
               value={note}
               onChange={(e) => setNote(e.target.value)}
             />
           </div>
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              Batal
+              Cancel
             </Button>
-            <Button type="submit">{isEdit ? 'Simpan Perubahan' : 'Simpan Target'}</Button>
+            <Button type="submit">{isEdit ? 'Save changes' : 'Save target'}</Button>
           </DialogFooter>
         </form>
       </DialogContent>

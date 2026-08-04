@@ -219,7 +219,7 @@ export function WalletsPage() {
     },
     {
       key: "balanceIdr",
-      header: "Saldo",
+      header: "Balance",
       sortable: true,
       searchable: false,
       align: "right",

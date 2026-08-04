@@ -81,7 +81,7 @@ export function AddWalletDialog({ open, onOpenChange, onSubmit }) {
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="add-wallet-balance">Saldo</Label>
+            <Label htmlFor="add-wallet-balance">Balance</Label>
             <Input
               id="add-wallet-balance"
               placeholder="e.g. 10000"

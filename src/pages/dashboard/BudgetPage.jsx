@@ -1,5 +1,15 @@
 import { useState, useEffect, useMemo } from 'react'
-import { Wallet, PiggyBank, ShoppingBasket, Globe, TrendingUp, Save, Edit, Plus, Trash2 } from 'lucide-react'
+import {
+  Wallet,
+  PiggyBank,
+  ShoppingBasket,
+  Globe,
+  TrendingUp,
+  Save,
+  Edit,
+  Plus,
+  Trash2,
+} from 'lucide-react'
 import { Button } from '../../components/ui/button'
 import { Badge } from '../../components/ui/badge'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card'
@@ -23,16 +33,16 @@ const spendingEstimate = 3215600
 
 const initialHistory = [
   {
-    id: 'seed-agustus',
-    month: 'Agustus',
+    id: 'seed-august',
+    month: 'August',
     year: 2026,
     target: 8420000,
     spent: 3215600,
     createdAt: new Date(2026, 7, 31, 23, 59, 0).toISOString(),
   },
   {
-    id: 'seed-juli',
-    month: 'Juli',
+    id: 'seed-july',
+    month: 'July',
     year: 2026,
     target: null,
     spent: 2900000,
@@ -44,32 +54,30 @@ function analyzeBudget({ target, spent }) {
   if (!target) {
     return {
       status: 'no-target',
-      expl: 'Tidak ada target bulan ini.',
-      rec: 'Atur target bulanan agar alokasi 50/30/20 dihitung otomatis.',
+      expl: 'No target was set for this month.',
+      rec: 'Set a monthly target so the 50/30/20 split is calculated automatically.',
     }
   }
   const needs = target * 0.5
-  const wants = target * 0.3
-  const invest = target * 0.2
-  if (spent > needs + wants) {
+  if (spent > needs + target * 0.3) {
     return {
       status: 'overspent',
-      expl: `Pengeluaran melebihi alokasi kebutuhan (${formatRp(needs)}) + keinginan (${formatRp(wants)}).`,
-      rec: 'Kurangi keinginan, alirikan surplus ke investasi.',
+      expl: `Spending exceeded the needs (${formatRp(needs)}) + wants (${formatRp(target * 0.3)}) budgets.`,
+      rec: 'Reduce discretionary wants and redirect the surplus to investment.',
     }
   }
   if (spent > needs) {
     return {
       status: 'on-target',
-      expl: 'Pengeluaran masih dalam batas alokasi kebutuhan.',
-      rec: 'Budget sehat. Pertahankan alokasi, tambahkan sedikit ke investor.',
+      expl: 'Spending stays within the needs budget.',
+      rec: 'Healthy budget. Keep the allocation and add a little buffer to investment.',
     }
   }
   const saved = target - spent
   return {
     status: 'on-target',
-    expl: 'Pengeluaran di bawah alokasi kebutuhan (50%).',
-    rec: `Hebat, tabung ${formatRp(saved)} atau alokasikan ke ${formatRp(invest)} bulan depan.`,
+    expl: 'Spending is below the 50% needs allocation.',
+    rec: `Great, save ${formatRp(saved)} or allocate it to the 20% investment bucket next month.`,
   }
 }
 
@@ -77,30 +85,30 @@ function BudgetBuckets({ income }) {
   const buckets = [
     {
       key: 'needs',
-      label: 'Kebutuhan Pokok',
+      label: 'Needs',
       pct: 50,
       amount: Math.round(income * 0.5),
       color: 'var(--color-chart-1)',
       icon: ShoppingBasket,
-      desc: 'Makan, sewa, utilitas, transport',
+      desc: 'Food, rent, utilities, transport',
     },
     {
       key: 'wants',
-      label: 'Keinginan',
+      label: 'Wants',
       pct: 30,
       amount: Math.round(income * 0.3),
       color: 'var(--color-chart-3)',
       icon: Globe,
-      desc: 'Hiburan, dining out, belanja non-esensial',
+      desc: 'Entertainment, dining out, non-essential shopping',
     },
     {
       key: 'invest',
-      label: 'Investasi',
+      label: 'Investment',
       pct: 20,
       amount: Math.round(income * 0.2),
       color: 'var(--color-chart-2)',
       icon: PiggyBank,
-      desc: 'Tabungan, saham, dana pensiun',
+      desc: 'Savings, stocks, retirement funds',
     },
   ]
 
@@ -109,7 +117,7 @@ function BudgetBuckets({ income }) {
     buckets.map((b) => [b.key, { label: b.label, color: b.color }])
   )
   const barData = buckets.map((b) => ({ label: b.label, allocated: b.pct }))
-  const barConfig = { allocated: { label: 'Alokasi %', color: 'var(--color-chart-4)' } }
+  const barConfig = { allocated: { label: 'Allocation %', color: 'var(--color-chart-4)' } }
   const totalAllocated = buckets.reduce((sum, b) => sum + b.pct, 0)
 
   return (
@@ -117,19 +125,19 @@ function BudgetBuckets({ income }) {
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Pendapatan</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Income</CardTitle>
             <div className="rounded-lg bg-accent p-1.5">
               <Wallet className="size-4" />
             </div>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{formatRp(income)}</div>
-            <p className="mt-1 text-xs text-muted-foreground">target bulan ini</p>
+            <p className="mt-1 text-xs text-muted-foreground">monthly target</p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Terpakai</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Spent</CardTitle>
             <div className="rounded-lg bg-accent p-1.5">
               <TrendingUp className="size-4" />
             </div>
@@ -137,32 +145,32 @@ function BudgetBuckets({ income }) {
           <CardContent>
             <div className="text-2xl font-bold">{formatRp(spendingEstimate)}</div>
             <p className="mt-1 text-xs text-muted-foreground">
-              {Math.round((spendingEstimate / income) * 100)}% dari pendapatan
+              {Math.round((spendingEstimate / income) * 100)}% of income
             </p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Tersisa</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Remaining</CardTitle>
             <div className="rounded-lg bg-accent p-1.5">
               <Save className="size-4" />
             </div>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{formatRp(income - spendingEstimate)}</div>
-            <p className="mt-1 text-xs text-muted-foreground">sisa alokasi belum dipakai</p>
+            <p className="mt-1 text-xs text-muted-foreground">left to allocate</p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Alokasi</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Allocation</CardTitle>
             <div className="rounded-lg bg-accent p-1.5">
               <PiggyBank className="size-4" />
             </div>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{totalAllocated}%</div>
-            <p className="mt-1 text-xs text-muted-foreground">sudah dialokasikan</p>
+            <p className="mt-1 text-xs text-muted-foreground">already allocated</p>
           </CardContent>
         </Card>
       </div>
@@ -201,20 +209,20 @@ function BudgetBuckets({ income }) {
       <div className="grid gap-6 lg:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle>Alokasi Pengeluaran</CardTitle>
-            <CardDescription>Persentase tiap kategori dari pendapatan</CardDescription>
+            <CardTitle>Spending Allocation</CardTitle>
+            <CardDescription>Share of each category against income</CardDescription>
           </CardHeader>
           <CardContent>
             <ChartContainer config={pieConfig} formatValue={(v) => `${v}%`}>
-              <PieChart data={pieData} innerRadius={70} centerValue={`${totalAllocated}%`} centerLabel="Total Alokasi" />
+              <PieChart data={pieData} innerRadius={70} centerValue={`${totalAllocated}%`} centerLabel="Total Allocation" />
             </ChartContainer>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader>
-            <CardTitle>Alokasi per Kategori (%)</CardTitle>
-            <CardDescription>Persentase alokasi bulanan</CardDescription>
+            <CardTitle>Allocation per Category (%)</CardTitle>
+            <CardDescription>Monthly allocation breakdown</CardDescription>
           </CardHeader>
           <CardContent>
             <ChartContainer config={barConfig} formatValue={(v) => `${v}%`} className="h-64">
@@ -223,9 +231,9 @@ function BudgetBuckets({ income }) {
             <ChartLegend
               className="mt-3"
               items={[
-                { label: 'Kebutuhan Pokok (50%)', color: 'var(--color-chart-1)' },
-                { label: 'Keinginan (30%)', color: 'var(--color-chart-3)' },
-                { label: 'Investasi (20%)', color: 'var(--color-chart-2)' },
+                { label: 'Needs (50%)', color: 'var(--color-chart-1)' },
+                { label: 'Wants (30%)', color: 'var(--color-chart-3)' },
+                { label: 'Investment (20%)', color: 'var(--color-chart-2)' },
               ]}
             />
           </CardContent>
@@ -237,12 +245,16 @@ function BudgetBuckets({ income }) {
 
 function StatusBadge({ status }) {
   const map = {
-    'on-target': { variant: 'success', label: 'Tertarget' },
+    'on-target': { variant: 'success', label: 'On Target' },
     'overspent': { variant: 'warning', label: 'Over' },
-    'no-target': { variant: 'outline', label: 'Tidak ada target' },
+    'no-target': { variant: 'outline', label: 'No target' },
   }
   const m = map[status] || map['no-target']
-  return <Badge variant={m.variant} className="capitalize">{m.label}</Badge>
+  return (
+    <Badge variant={m.variant} className="capitalize">
+      {m.label}
+    </Badge>
+  )
 }
 
 export function BudgetPage() {
@@ -276,11 +288,11 @@ export function BudgetPage() {
   const submit = (payload) => {
     const nowIso = new Date().toISOString()
     const entry = { id: nowIso, amount: payload.amount, note: payload.note, createdAt: nowIso }
-    const prevTarget = localStorage.getItem('cashvio-budget-target')
+    localStorage.setItem(
+      'cashvio-budget-target-history',
+      JSON.stringify([entry, ...JSON.parse(localStorage.getItem('cashvio-budget-target-history') || '[]')].slice(0, 20))
+    )
     setTargetIncome(payload.amount)
-    const hist = JSON.parse(localStorage.getItem('cashvio-budget-target-history') || '[]')
-    localStorage.setItem('cashvio-budget-target-history', JSON.stringify([entry, ...hist].slice(0, 20)))
-    void prevTarget
   }
   const clearTarget = () => setTargetIncome(null)
 
@@ -296,9 +308,7 @@ export function BudgetPage() {
     }
     const enriched = { ...snapshot, ...analyzeBudget(snapshot) }
     setMonthHistory((prev) => {
-      const filtered = prev.filter(
-        (m) => !(m.month === enriched.month && m.year === enriched.year)
-      )
+      const filtered = prev.filter((m) => !(m.month === enriched.month && m.year === enriched.year))
       return [enriched, ...filtered]
     })
   }
@@ -316,21 +326,21 @@ export function BudgetPage() {
           <h1 className="text-2xl font-bold tracking-tight">Budgeting</h1>
           <p className="text-sm text-muted-foreground">
             {targetIncome
-              ? `Target bulanan ${formatRp(targetIncome)} — alokasikan 50/30/20.`
-              : 'Belum ada target bulanan. Atur dulu untuk mulai budget.'}
+              ? `Monthly target ${formatRp(targetIncome)} — allocate 50/30/20.`
+              : 'No monthly target yet. Set one to start budgeting.'}
           </p>
         </div>
         {!targetIncome && (
           <Button onClick={openSet}>
             <Plus className="size-4" />
-            Set Target Bulanan
+            Set Monthly Target
           </Button>
         )}
         {targetIncome && (
           <div className="flex items-center gap-2">
             <Button variant="outline" size="sm" onClick={saveMonthEnd}>
               <Save className="size-4" />
-              Simpan Akhir Bulan
+              Save End of Month
             </Button>
             <Button variant="outline" size="sm" onClick={clearTarget}>
               <Trash2 className="size-4" />
@@ -349,34 +359,37 @@ export function BudgetPage() {
           <div className="rounded-full bg-accent p-4">
             <PiggyBank className="size-8 text-muted-foreground" />
           </div>
-          <CardTitle>Belum ada target bulanan</CardTitle>
+          <CardTitle>No monthly target set</CardTitle>
           <CardDescription>
-            Atur pendapatan bulanan untuk menghitung alokasi kebutuhan, keinginan, dan investasi otomatis (50/30/20).
+            Set your monthly income to automatically calculate the needs, wants, and
+            investment split (50/30/20).
           </CardDescription>
           <Button onClick={openSet}>
             <Plus className="size-4" />
-            Set Target Bulanan
+            Set Monthly Target
           </Button>
         </Card>
       )}
 
       {targetIncome && <BudgetBuckets income={targetIncome} />}
 
-      {previousMonth && previousMonth.status ? (
+      {previousMonth && prevEnriched ? (
         <Card>
           <CardHeader>
-            <CardTitle>Ringkasan Bulan Lalu ({monthYear(previousMonth.createdAt)})</CardTitle>
-            <CardDescription>Snapshot akhir bulan lalu, ditampilkan untuk referensi bulan ini.</CardDescription>
+            <CardTitle>Last Month Summary ({monthYear(previousMonth.createdAt)})</CardTitle>
+            <CardDescription>
+              End-of-month snapshot from the previous month, shown as a reference this month.
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-2">
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">Target</span>
               <span className="font-medium">
-                {previousMonth.target ? formatRp(previousMonth.target) : '— tidak diset —'}
+                {previousMonth.target ? formatRp(previousMonth.target) : '— not set —'}
               </span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">Pengeluaran</span>
+              <span className="text-sm text-muted-foreground">Spent</span>
               <span className="font-medium">{formatRp(previousMonth.spent)}</span>
             </div>
             <div className="flex items-center justify-between">
@@ -387,7 +400,7 @@ export function BudgetPage() {
               <p className="text-sm text-muted-foreground">{prevEnriched.expl}</p>
             </div>
             <div className="pt-1">
-              <p className="text-sm font-medium">Rekomendasi AI</p>
+              <p className="text-sm font-medium">AI Recommendation</p>
               <p className="text-sm text-muted-foreground">{prevEnriched.rec}</p>
             </div>
           </CardContent>
@@ -396,30 +409,32 @@ export function BudgetPage() {
         <Card>
           <CardContent className="flex flex-col items-center gap-2 py-8 text-center">
             <PiggyBank className="size-8 text-muted-foreground" />
-            <CardTitle>Belum ada riwayat bulan lalu</CardTitle>
-            <CardDescription>Simpan "Akhir Bulan" untuk membuat snapshot otomatis yang ditampil di bulan berikutnya.</CardDescription>
+            <CardTitle>No previous month snapshot yet</CardTitle>
+            <CardDescription>
+              Click "Save End of Month" to generate a snapshot that appears here next month.
+            </CardDescription>
           </CardContent>
         </Card>
       )}
 
       <Card>
         <CardHeader>
-          <CardTitle>Riwayat Bulan</CardTitle>
-          <CardDescription>Riwayat target, status, dan rekomendasi per akhir bulan</CardDescription>
+          <CardTitle>Month History</CardTitle>
+          <CardDescription>Budget targets, status, and AI recommendations per month</CardDescription>
         </CardHeader>
         <CardContent className="p-0">
           {monthHistory.length === 0 ? (
-            <p className="p-6 text-sm text-muted-foreground">Belum ada riwayat bulan.</p>
+            <p className="p-6 text-sm text-muted-foreground">No month history yet.</p>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Bulan</TableHead>
+                  <TableHead>Month</TableHead>
                   <TableHead className="text-right">Target</TableHead>
-                  <TableHead className="text-right">Pengeluaran</TableHead>
+                  <TableHead className="text-right">Spent</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead>Penjelasan</TableHead>
-                  <TableHead>Rekomendasi AI</TableHead>
+                  <TableHead>Explanation</TableHead>
+                  <TableHead>AI Recommendation</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -429,7 +444,7 @@ export function BudgetPage() {
                     <TableRow key={m.id}>
                       <TableCell>{monthYear(m.createdAt)}</TableCell>
                       <TableCell className="text-right tabular-nums">
-                        {m.target ? formatRp(m.target) : '— tidak diset —'}
+                        {m.target ? formatRp(m.target) : '— not set —'}
                       </TableCell>
                       <TableCell className="text-right tabular-nums">{formatRp(m.spent)}</TableCell>
                       <TableCell>
