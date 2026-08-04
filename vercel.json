@@ -2,7 +2,6 @@
   "version": 3,
   "outputDirectory": "dist",
   "trailingSlash": false,
-  "cleanOutputs": true,
   "builds": [
     {
       "src": "package.json",
