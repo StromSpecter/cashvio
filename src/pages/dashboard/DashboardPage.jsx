@@ -13,6 +13,11 @@ import {
   DropdownSeparator,
 } from '../../components/ui/dropdown'
 import { DataTable } from '../../components/ui/table'
+import { ChartContainer, ChartLegend } from '../../components/ui/chart'
+import { AreaChart } from '../../components/ui/chart'
+import { BarChart } from '../../components/ui/chart'
+import { PieChart } from '../../components/ui/chart'
+import { RadialChart } from '../../components/ui/chart'
 
 const stats = [
   { label: 'Total Balance', value: 'Rp24.562.800', change: '+12.4%', icon: Wallet, up: true },
@@ -21,13 +26,54 @@ const stats = [
   { label: 'Kartu Aktif', value: '2', change: '+1 bulan ini', icon: TrendingUp, up: true },
 ]
 
+const formatRp = (value) => `Rp${value.toLocaleString('id-ID')}`
+
+const balanceRanges = {
+  '7d': {
+    labels: ['Jul 29', 'Jul 30', 'Jul 31', 'Agu 1', 'Agu 2', 'Agu 3', 'Agu 4'],
+    income: [120, 80, 140, 95, 160, 110, 135],
+    expense: [45, 60, 38, 72, 55, 48, 62],
+  },
+  '30d': {
+    labels: ['Jul 6', 'Jul 10', 'Jul 14', 'Jul 18', 'Jul 22', 'Jul 26', 'Jul 30', 'Agu 3'],
+    income: [110, 145, 95, 170, 130, 150, 120, 165],
+    expense: [50, 65, 80, 45, 70, 90, 55, 75],
+  },
+  '90d': {
+    labels: ['Mei', 'Jun', 'Jul', 'Agu'],
+    income: [320, 410, 385, 450],
+    expense: [180, 240, 210, 195],
+  },
+}
+
+const balanceConfig = {
+  income: { label: 'Pemasukan', color: 'var(--color-chart-2)' },
+  expense: { label: 'Pengeluaran', color: 'var(--color-destructive)' },
+}
+
 const spending = [
-  { category: 'Rent & Housing', amount: 38, color: 'bg-primary' },
-  { category: 'Food & Dining', amount: 24, color: 'bg-emerald-500' },
-  { category: 'Transportation', amount: 16, color: 'bg-amber-500' },
-  { category: 'Entertainment', amount: 12, color: 'bg-purple-500' },
-  { category: 'Other', amount: 10, color: 'bg-muted-foreground' },
+  { key: 'rent', label: 'Rent & Housing', value: 38, color: 'var(--color-chart-1)' },
+  { key: 'food', label: 'Food & Dining', value: 24, color: 'var(--color-chart-2)' },
+  { key: 'transport', label: 'Transportation', value: 16, color: 'var(--color-chart-3)' },
+  { key: 'entertainment', label: 'Entertainment', value: 12, color: 'var(--color-chart-4)' },
+  { key: 'other', label: 'Other', value: 10, color: 'var(--color-chart-5)' },
 ]
+
+const spendingConfig = Object.fromEntries(
+  spending.map((s) => [s.key, { label: s.label, color: s.color }])
+)
+
+const cashFlowData = [
+  { label: 'Mei', income: 320, expense: 180 },
+  { label: 'Jun', income: 410, expense: 240 },
+  { label: 'Jul', income: 385, expense: 210 },
+  { label: 'Agu', income: 450, expense: 195 },
+]
+
+const cashFlowConfig = {
+  income: { label: 'Pemasukan', color: 'var(--color-chart-2)' },
+  expense: { label: 'Pengeluaran', color: 'var(--color-destructive)' },
+}
 
 const columns = [
   {
@@ -132,6 +178,7 @@ function StatCard({ stat }) {
 }
 
 export function DashboardPage() {
+  const [range, setRange] = useState('30d')
   const [transactions, setTransactions] = useState([
     { id: 1, name: 'Acme Corp', amount: '+Rp2.450.000', status: 'completed', initials: 'AC', date: 'Aug 3', wallet: 'Dana' },
     { id: 2, name: 'Netflix', amount: '-Rp15.990', status: 'completed', initials: 'NF', date: 'Aug 2', wallet: 'ShopeePay' },
@@ -154,6 +201,14 @@ export function DashboardPage() {
       onDuplicate={handleDuplicate}
     />
   )
+
+  const currentRange = balanceRanges[range]
+  const balanceData = currentRange.labels.map((label, i) => ({
+    label,
+    income: currentRange.income[i],
+    expense: currentRange.expense[i],
+  }))
+  const spendingTotal = spending.reduce((sum, s) => sum + s.value, 0)
 
   return (
     <div className="space-y-6">
@@ -181,9 +236,9 @@ export function DashboardPage() {
           <CardHeader className="flex flex-row items-center justify-between space-y-0">
             <div>
               <CardTitle>Balance Overview</CardTitle>
-              <CardDescription>Your account activity for the last 30 days</CardDescription>
+              <CardDescription>Arus pemasukan dan pengeluaran untuk {range}</CardDescription>
             </div>
-            <Tabs defaultValue="30d">
+            <Tabs value={range} onValueChange={setRange}>
               <TabsList>
                 <TabsTrigger value="7d">7d</TabsTrigger>
                 <TabsTrigger value="30d">30d</TabsTrigger>
@@ -192,40 +247,60 @@ export function DashboardPage() {
             </Tabs>
           </CardHeader>
           <CardContent>
-            <div className="flex h-64 items-end gap-2">
-              {[42, 65, 38, 72, 55, 88, 46, 62, 74, 51, 68, 92, 58, 47, 79, 66, 35, 57, 84, 49, 63, 71, 44, 90, 53, 69, 38, 61, 76, 48].map(
-                (h, i) => (
-                  <div
-                    key={i}
-                    className="flex-1 rounded-t-md bg-primary/20 transition-colors hover:bg-primary/40"
-                    style={{ height: `${h}%` }}
-                  />
-                )
-              )}
-            </div>
+            <ChartContainer config={balanceConfig} formatValue={formatRp} className="h-64">
+              <AreaChart data={balanceData} showLegend height={256} />
+            </ChartContainer>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader>
             <CardTitle>Spending by Category</CardTitle>
-            <CardDescription>Where your money went this month</CardDescription>
+            <CardDescription>Alokasi pengeluaran bulan ini</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
-            {spending.map((item) => (
-              <div key={item.category} className="space-y-1.5">
-                <div className="flex items-center justify-between text-sm">
-                  <span>{item.category}</span>
-                  <span className="text-muted-foreground">{item.amount}%</span>
-                </div>
-                <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
-                  <div
-                    className={`h-full rounded-full ${item.color}`}
-                    style={{ width: `${item.amount}%` }}
-                  />
-                </div>
-              </div>
-            ))}
+          <CardContent>
+            <ChartContainer config={spendingConfig} formatValue={(v) => `${v}%`}>
+              <PieChart
+                data={spending}
+                innerRadius={70}
+                centerValue={`${spendingTotal}%`}
+                centerLabel="Total"
+              />
+            </ChartContainer>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid gap-6 lg:grid-cols-3">
+        <Card className="lg:col-span-2">
+          <CardHeader>
+            <CardTitle>Cash Flow</CardTitle>
+            <CardDescription>Perbandingan pemasukan vs pengeluaran per bulan</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ChartContainer config={cashFlowConfig} formatValue={formatRp} className="h-64">
+              <BarChart data={cashFlowData} showLegend height={256} />
+            </ChartContainer>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Budget Bulanan</CardTitle>
+            <CardDescription>Penggunaan budget hingga hari ini</CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-col items-center gap-4">
+            <ChartContainer
+              config={{ budget: { label: 'Budget Terpakai', color: 'var(--color-chart-3)' } }}
+              formatValue={(v) => `${v}%`}
+              className="w-full max-w-[14rem]"
+            >
+              <RadialChart value={68} max={100} height={180} showLabel label="Budget Terpakai" />
+            </ChartContainer>
+            <ChartLegend
+              className="mt-0"
+              items={[{ label: 'Sisa budget Rp1.625.000', color: 'var(--color-chart-3)' }]}
+            />
           </CardContent>
         </Card>
       </div>
