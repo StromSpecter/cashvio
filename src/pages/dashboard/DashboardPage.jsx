@@ -1,4 +1,5 @@
-import { TrendingUp, Wallet, ArrowDownToLine, ArrowUpFromLine, ArrowDownRight, ArrowUpRight, Plus, MoreHorizontal } from 'lucide-react'
+import { useState } from 'react'
+import { TrendingUp, Wallet, ArrowDownToLine, ArrowUpFromLine, ArrowDownRight, ArrowUpRight, Plus, MoreHorizontal, Copy } from 'lucide-react'
 import { Button } from '../../components/ui/button'
 import { Badge } from '../../components/ui/badge'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card'
@@ -11,21 +12,13 @@ import {
   DropdownItem,
   DropdownSeparator,
 } from '../../components/ui/dropdown'
+import { DataTable } from '../../components/ui/table'
 
 const stats = [
-  { label: 'Total Balance', value: '$24,562.80', change: '+12.4%', icon: Wallet, up: true },
-  { label: 'Income', value: '$8,420.00', change: '+4.1%', icon: ArrowDownToLine, up: true },
-  { label: 'Spending', value: '$3,215.60', change: '-2.3%', icon: ArrowUpFromLine, up: false },
-  { label: 'Active Cards', value: '4', change: '+1 this month', icon: TrendingUp, up: true },
-]
-
-const transactions = [
-  { id: 1, name: 'Acme Corp', email: 'payroll@acme.com', amount: '+$2,450.00', status: 'completed', initials: 'AC', date: 'Aug 3' },
-  { id: 2, name: 'Netflix', email: 'billing@netflix.com', amount: '-$15.99', status: 'completed', initials: 'NF', date: 'Aug 2' },
-  { id: 3, name: 'Starbucks', email: 'cards@starbucks.com', amount: '-$6.75', status: 'pending', initials: 'SB', date: 'Aug 2' },
-  { id: 4, name: 'GitHub', email: 'billing@github.com', amount: '-$9.00', status: 'completed', initials: 'GH', date: 'Aug 1' },
-  { id: 5, name: 'Acme Corp', email: 'payroll@acme.com', amount: '+$2,450.00', status: 'completed', initials: 'AC', date: 'Aug 1' },
-  { id: 6, name: 'Uber', email: 'receipts@uber.com', amount: '-$32.10', status: 'failed', initials: 'UB', date: 'Jul 31' },
+  { label: 'Total Balance', value: 'Rp24.562.800', change: '+12.4%', icon: Wallet, up: true },
+  { label: 'Pemasukan', value: 'Rp8.420.000', change: '+4.1%', icon: ArrowDownToLine, up: true },
+  { label: 'Pengeluaran', value: 'Rp3.215.600', change: '-2.3%', icon: ArrowUpFromLine, up: false },
+  { label: 'Kartu Aktif', value: '2', change: '+1 bulan ini', icon: TrendingUp, up: true },
 ]
 
 const spending = [
@@ -35,6 +28,80 @@ const spending = [
   { category: 'Entertainment', amount: 12, color: 'bg-purple-500' },
   { category: 'Other', amount: 10, color: 'bg-muted-foreground' },
 ]
+
+const columns = [
+  {
+    key: 'name',
+    header: 'Transaction',
+    sortable: true,
+    render: (value, row) => (
+      <div className="flex items-center gap-3 min-w-0">
+        <Avatar className="size-9 shrink-0">
+          <AvatarImage src="" alt={row.name} />
+          <AvatarFallback className="text-xs">{row.initials}</AvatarFallback>
+        </Avatar>
+        <span className="font-medium truncate">{value}</span>
+      </div>
+    ),
+  },
+  {
+    key: 'wallet',
+    header: 'Wallet/Card',
+    sortable: true,
+  },
+  {
+    key: 'date',
+    header: 'Date',
+    sortable: true,
+  },
+  {
+    key: 'amount',
+    header: 'Amount',
+    sortable: true,
+    align: 'right',
+    render: (value) => (
+      <span className={value.startsWith('+') ? 'text-emerald-600' : ''}>
+        {value}
+      </span>
+    ),
+  },
+  {
+    key: 'status',
+    header: 'Status',
+    sortable: true,
+    render: (value) => (
+      <Badge
+        variant={
+          value === 'completed'
+            ? 'success'
+            : value === 'failed'
+              ? 'destructive'
+              : 'warning'
+        }
+        className="capitalize"
+      >
+        {value}
+      </Badge>
+    ),
+  },
+]
+
+function DashboardActions({ row, onDuplicate }) {
+  return (
+    <Dropdown>
+      <DropdownTrigger>
+        <Button variant="ghost" size="icon" aria-label="Transaction options">
+          <MoreHorizontal className="size-4" />
+        </Button>
+      </DropdownTrigger>
+      <DropdownContent align="end">
+        <DropdownItem onClick={() => onDuplicate(row)}>
+          <Copy className="size-4 mr-2" /> Duplicate
+        </DropdownItem>
+      </DropdownContent>
+    </Dropdown>
+  )
+}
 
 function StatCard({ stat }) {
   const Icon = stat.icon
@@ -65,6 +132,29 @@ function StatCard({ stat }) {
 }
 
 export function DashboardPage() {
+  const [transactions, setTransactions] = useState([
+    { id: 1, name: 'Acme Corp', amount: '+Rp2.450.000', status: 'completed', initials: 'AC', date: 'Aug 3', wallet: 'Dana' },
+    { id: 2, name: 'Netflix', amount: '-Rp15.990', status: 'completed', initials: 'NF', date: 'Aug 2', wallet: 'ShopeePay' },
+    { id: 3, name: 'Starbucks', amount: '-Rp6.750', status: 'pending', initials: 'SB', date: 'Aug 2', wallet: 'GoPay' },
+    { id: 4, name: 'GitHub', amount: '-Rp9.000', status: 'completed', initials: 'GH', date: 'Aug 1', wallet: 'Dana' },
+    { id: 5, name: 'Acme Corp', amount: '+Rp2.450.000', status: 'completed', initials: 'AC', date: 'Aug 1', wallet: 'Dana' },
+    { id: 6, name: 'Uber', amount: '-Rp32.100', status: 'failed', initials: 'UB', date: 'Jul 31', wallet: 'GoPay' },
+  ])
+
+  const handleDuplicate = (tx) => {
+    setTransactions((prev) => [
+      { ...tx, id: Date.now(), name: `${tx.name} (Copy)` },
+      ...prev,
+    ])
+  }
+
+  const tableActions = (row) => (
+    <DashboardActions
+      row={row}
+      onDuplicate={handleDuplicate}
+    />
+  )
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -162,47 +252,14 @@ export function DashboardPage() {
             </DropdownContent>
           </Dropdown>
         </CardHeader>
-        <CardContent>
-          <div className="space-y-1">
-            {transactions.map((tx) => (
-              <div
-                key={tx.id}
-                className="flex items-center gap-4 rounded-lg p-2 transition-colors hover:bg-accent"
-              >
-                <Avatar className="size-9">
-                  <AvatarImage src="" alt={tx.name} />
-                  <AvatarFallback className="text-xs">{tx.initials}</AvatarFallback>
-                </Avatar>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium">{tx.name}</p>
-                  <p className="truncate text-xs text-muted-foreground">
-                    {tx.email} · {tx.date}
-                  </p>
-                </div>
-                <div className="text-right">
-                  <p
-                    className={`text-sm font-medium ${
-                      tx.amount.startsWith('+') ? 'text-emerald-600' : ''
-                    }`}
-                  >
-                    {tx.amount}
-                  </p>
-                  <Badge
-                    variant={
-                      tx.status === 'completed'
-                        ? 'success'
-                        : tx.status === 'failed'
-                          ? 'destructive'
-                          : 'warning'
-                    }
-                    className="mt-0.5 capitalize"
-                  >
-                    {tx.status}
-                  </Badge>
-                </div>
-              </div>
-            ))}
-          </div>
+        <CardContent className="p-0">
+          <DataTable
+            columns={columns}
+            data={transactions}
+            pageSize={5}
+            showActions
+            actions={tableActions}
+          />
         </CardContent>
       </Card>
     </div>

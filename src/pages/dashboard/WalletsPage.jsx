@@ -22,13 +22,6 @@ import {
 import { DataTable } from "../../components/ui/table";
 import { Pagination } from "../../components/ui/pagination";
 import {
-  Select,
-  SelectTrigger,
-  SelectValue,
-  SelectContent,
-  SelectItem,
-} from "../../components/ui/select";
-import {
   Dropdown,
   DropdownTrigger,
   DropdownContent,
@@ -39,15 +32,13 @@ import { AddWalletDialog } from "../../components/dialogs/AddWalletDialog";
 import { EditWalletDialog } from "../../components/dialogs/EditWalletDialog";
 import { DeleteWalletDialog } from "../../components/dialogs/DeleteWalletDialog";
 
-const IDR_PER_USD = 16000;
-
 const initialWallets = [
   {
     id: 1,
     name: "Savings",
     number: "8890 0012 9022",
     masked: "•••• 9022",
-    balanceUsd: 4860,
+    balanceIdr: 77800000,
     icon: Wallet,
     tone: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
   },
@@ -56,7 +47,7 @@ const initialWallets = [
     name: "Savings",
     number: "8890 0012 9022",
     masked: "•••• 9022",
-    balanceUsd: 4860,
+    balanceIdr: 77800000,
     icon: Wallet,
     tone: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
   },
@@ -65,26 +56,18 @@ const initialWallets = [
     name: "Savings",
     number: "8890 0012 9022",
     masked: "•••• 9022",
-    balanceUsd: 4860,
+    balanceIdr: 77800000,
     icon: Wallet,
     tone: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
   },
 ];
 
-const currencies = {
-  USD: { locale: "en-US", label: "Dollar (USD)" },
-  IDR: { locale: "id-ID", label: "Rupiah (IDR)" },
-};
-
-function formatBalance(amountUsd, currency) {
-  const { locale } = currencies[currency];
-  const amount = currency === "IDR" ? amountUsd * IDR_PER_USD : amountUsd;
-  const maximumFractionDigits = currency === "IDR" ? 0 : 2;
-  return new Intl.NumberFormat(locale, {
+function formatBalance(amountIdr) {
+  return new Intl.NumberFormat("id-ID", {
     style: "currency",
-    currency,
-    maximumFractionDigits,
-  }).format(amount);
+    currency: "IDR",
+    maximumFractionDigits: 0,
+  }).format(amountIdr);
 }
 
 function WalletActions({ onEdit, onDelete, tone = "default" }) {
@@ -165,7 +148,6 @@ function WalletFace({
 
 export function WalletsPage() {
   const [showNumber, setShowNumber] = useState(false);
-  const [currency, setCurrency] = useState("USD");
   const [view, setView] = useState("card");
   const [wallets, setWallets] = useState(initialWallets);
   const [cardPage, setCardPage] = useState(1);
@@ -184,8 +166,7 @@ export function WalletsPage() {
   const cardEndIndex = Math.min(cardPage * cardPageSize, wallets.length);
 
   const total = formatBalance(
-    wallets.reduce((sum, w) => sum + w.balanceUsd, 0),
-    currency
+    wallets.reduce((sum, w) => sum + w.balanceIdr, 0),
   );
 
   const handleDelete = (id) => {
@@ -237,14 +218,14 @@ export function WalletsPage() {
       ),
     },
     {
-      key: "balanceUsd",
+      key: "balanceIdr",
       header: "Saldo",
       sortable: true,
       searchable: false,
       align: "right",
       width: "min-w-[140px]",
       render: (value) => (
-        <span className="font-medium">{formatBalance(value, currency)}</span>
+        <span className="font-medium">{formatBalance(value)}</span>
       ),
     },
   ];
@@ -281,15 +262,6 @@ export function WalletsPage() {
               <List className="size-4" />
             </Button>
           </div>
-          <Select value={currency} onValueChange={setCurrency}>
-            <SelectTrigger className="h-9 w-44" aria-label="Select currency">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="USD">{currencies.USD.label}</SelectItem>
-              <SelectItem value="IDR">{currencies.IDR.label}</SelectItem>
-            </SelectContent>
-          </Select>
           <Button onClick={() => setAddOpen(true)}>
             <Plus className="size-4" />
             Add Wallet
@@ -328,7 +300,7 @@ export function WalletsPage() {
                       onToggleNumber={() => setShowNumber((s) => !s)}
                       onEdit={() => setEditTarget(wallet)}
                       onDelete={() => setDeleteTarget(wallet)}
-                      balance={formatBalance(wallet.balanceUsd, currency)}
+                      balance={formatBalance(wallet.balanceIdr)}
                     />
                   </CardContent>
                 </Card>
@@ -347,24 +319,20 @@ export function WalletsPage() {
             </div>
           </>
         ) : (
-          <Card>
-            <CardContent className="p-0">
-              <DataTable
-                columns={columns}
-                data={wallets}
-                pageSize={10}
-                showActions
-                actions={(row) => (
-                  <WalletActions
-                    onEdit={() => setEditTarget(row)}
-                    onDelete={() => setDeleteTarget(row)}
-                  />
-                )}
-                searchPlaceholder="Search..."
-                emptyMessage="No wallets found."
+          <DataTable
+            columns={columns}
+            data={wallets}
+            pageSize={10}
+            showActions
+            actions={(row) => (
+              <WalletActions
+                onEdit={() => setEditTarget(row)}
+                onDelete={() => setDeleteTarget(row)}
               />
-            </CardContent>
-          </Card>
+            )}
+            searchPlaceholder="Search..."
+            emptyMessage="No wallets found."
+          />
         )
       ) : (
         <Card>

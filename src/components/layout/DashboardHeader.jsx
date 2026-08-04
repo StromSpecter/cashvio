@@ -16,8 +16,8 @@ import {
 export function DashboardHeader({ onMenuClick }) {
   const { theme, toggle } = useTheme()
   const [notifications] = useState([
-    { id: 1, title: 'New deposit received', desc: '+$2,450.00 · Just now' },
-    { id: 2, title: 'Withdrawal approved', desc: '-$120.00 · 2h ago' },
+    { id: 1, title: 'New deposit received', desc: '+Rp2.450.000 · Just now' },
+    { id: 2, title: 'Withdrawal approved', desc: '-Rp120.000 · 2h ago' },
     { id: 3, title: 'Security alert', desc: 'New device sign-in · 1d ago' },
   ])
 

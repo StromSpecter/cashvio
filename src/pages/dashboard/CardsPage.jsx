@@ -21,13 +21,6 @@ import {
 import { DataTable } from "../../components/ui/table";
 import { Pagination } from "../../components/ui/pagination";
 import {
-  Select,
-  SelectTrigger,
-  SelectValue,
-  SelectContent,
-  SelectItem,
-} from "../../components/ui/select";
-import {
   Dropdown,
   DropdownTrigger,
   DropdownContent,
@@ -38,15 +31,13 @@ import { AddCardDialog } from "../../components/dialogs/AddCardDialog";
 import { EditCardDialog } from "../../components/dialogs/EditCardDialog";
 import { DeleteCardDialog } from "../../components/dialogs/DeleteCardDialog";
 
-const IDR_PER_USD = 16000;
-
 const initialAccounts = [
   {
     id: 1,
     bank: "Bank Central Asia",
     number: "0834 5678 9012",
     masked: "•••• •••• 9012",
-    balanceUsd: 18432.5,
+    balanceIdr: 295000000,
     gradient: "from-zinc-900 to-zinc-700",
   },
   {
@@ -54,7 +45,7 @@ const initialAccounts = [
     bank: "Bank Mandiri",
     number: "1370 0298 4471",
     masked: "•••• •••• 4471",
-    balanceUsd: 4860,
+    balanceIdr: 77800000,
     gradient: "from-indigo-600 to-purple-600",
   },
   {
@@ -62,7 +53,7 @@ const initialAccounts = [
     bank: "DBS Bank",
     number: "5031 8820 3345",
     masked: "•••• •••• 3345",
-    balanceUsd: 2127.3,
+    balanceIdr: 34000000,
     gradient: "from-emerald-600 to-teal-600",
   },
   {
@@ -70,25 +61,17 @@ const initialAccounts = [
     bank: "Bank Negara Indonesia",
     number: "0111 3025 6620",
     masked: "•••• •••• 6620",
-    balanceUsd: 10000,
+    balanceIdr: 160000000,
     gradient: "from-rose-600 to-orange-500",
   },
 ];
 
-const currencies = {
-  USD: { locale: "en-US", label: "Dollar (USD)" },
-  IDR: { locale: "id-ID", label: "Rupiah (IDR)" },
-};
-
-function formatBalance(amountUsd, currency) {
-  const { locale } = currencies[currency];
-  const amount = currency === "IDR" ? amountUsd * IDR_PER_USD : amountUsd;
-  const maximumFractionDigits = currency === "IDR" ? 0 : 2;
-  return new Intl.NumberFormat(locale, {
+function formatBalance(amountIdr) {
+  return new Intl.NumberFormat("id-ID", {
     style: "currency",
-    currency,
-    maximumFractionDigits,
-  }).format(amount);
+    currency: "IDR",
+    maximumFractionDigits: 0,
+  }).format(amountIdr);
 }
 
 function AccountFace({ account, showNumber, onToggleNumber, balance }) {
@@ -173,7 +156,6 @@ function AccountActions({ onEdit, onDelete, tone = "default" }) {
 
 export function CardsPage() {
   const [showNumber, setShowNumber] = useState(false);
-  const [currency, setCurrency] = useState("USD");
   const [view, setView] = useState("card");
   const [accounts, setAccounts] = useState(initialAccounts);
   const [cardPage, setCardPage] = useState(1);
@@ -193,8 +175,9 @@ export function CardsPage() {
   const cardStartIndex = accounts.length === 0 ? 0 : (cardPage - 1) * cardPageSize + 1;
   const cardEndIndex = Math.min(cardPage * cardPageSize, accounts.length);
 
-  const totalUsd = accounts.reduce((sum, a) => sum + a.balanceUsd, 0);
-  const total = formatBalance(totalUsd, currency);
+  const total = formatBalance(
+    accounts.reduce((sum, a) => sum + a.balanceIdr, 0),
+  );
 
   const handleDelete = (id) => {
     setAccounts((prev) => prev.filter((a) => a.id !== id));
@@ -244,14 +227,14 @@ export function CardsPage() {
       ),
     },
     {
-      key: "balanceUsd",
+      key: "balanceIdr",
       header: "Saldo",
       sortable: true,
       searchable: false,
       align: "right",
       width: "min-w-[140px]",
       render: (value) => (
-        <span className="font-medium">{formatBalance(value, currency)}</span>
+        <span className="font-medium">{formatBalance(value)}</span>
       ),
     },
   ];
@@ -288,15 +271,6 @@ export function CardsPage() {
               <List className="size-4" />
             </Button>
           </div>
-          <Select value={currency} onValueChange={setCurrency}>
-            <SelectTrigger className="h-9 w-44" aria-label="Select currency">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="USD">{currencies.USD.label}</SelectItem>
-              <SelectItem value="IDR">{currencies.IDR.label}</SelectItem>
-            </SelectContent>
-          </Select>
           <Button onClick={() => setAddOpen(true)}>
             <Plus className="size-4" />
             Add Account
@@ -339,7 +313,7 @@ export function CardsPage() {
                         account={account}
                         showNumber={showNumber}
                         onToggleNumber={() => setShowNumber((s) => !s)}
-                        balance={formatBalance(account.balanceUsd, currency)}
+                        balance={formatBalance(account.balanceIdr)}
                       />
                     </div>
                   </CardContent>
@@ -359,24 +333,20 @@ export function CardsPage() {
             </div>
           </>
         ) : (
-          <Card>
-            <CardContent className="p-0">
-              <DataTable
-                columns={columns}
-                data={accounts}
-                pageSize={10}
-                showActions
-                actions={(row) => (
-                  <AccountActions
-                    onEdit={() => setEditTarget(row)}
-                    onDelete={() => setDeleteTarget(row)}
-                  />
-                )}
-                searchPlaceholder="Search..."
-                emptyMessage="No accounts found."
+          <DataTable
+            columns={columns}
+            data={accounts}
+            pageSize={10}
+            showActions
+            actions={(row) => (
+              <AccountActions
+                onEdit={() => setEditTarget(row)}
+                onDelete={() => setDeleteTarget(row)}
               />
-            </CardContent>
-          </Card>
+            )}
+            searchPlaceholder="Search..."
+            emptyMessage="No accounts found."
+          />
         )
       ) : (
         <Card>

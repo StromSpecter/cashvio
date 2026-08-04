@@ -1,9 +1,8 @@
 import { useState } from 'react'
-import { Search, Download, Plus, ArrowDownToLine, ArrowLeftRight, Store, ShoppingCart, Briefcase, Repeat, Globe, CircleAlert, MoreHorizontal } from 'lucide-react'
+import { Search, Download, Plus, ArrowDownToLine, ArrowLeftRight, Store, ShoppingCart, Briefcase, Repeat, Globe, MoreHorizontal, Pencil, Trash2, Wallet } from 'lucide-react'
 import { Button } from '../../components/ui/button'
 import { Badge } from '../../components/ui/badge'
 import { Input } from '../../components/ui/input'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card'
 import { Avatar, AvatarImage, AvatarFallback } from '../../components/ui/avatar'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../../components/ui/tabs'
 import {
@@ -20,6 +19,10 @@ import {
   DropdownItem,
   DropdownSeparator,
 } from '../../components/ui/dropdown'
+import { DataTable } from '../../components/ui/table'
+import { AddTransactionDialog } from '../../components/dialogs/AddTransactionDialog'
+import { EditTransactionDialog } from '../../components/dialogs/EditTransactionDialog'
+import { DeleteTransactionDialog } from '../../components/dialogs/DeleteTransactionDialog'
 
 const categories = {
   income: { label: 'Income', icon: ArrowDownToLine, tone: 'text-emerald-600' },
@@ -31,39 +34,159 @@ const categories = {
   transfer: { label: 'Transfer', icon: ArrowLeftRight, tone: 'text-zinc-600' },
 }
 
-const allTransactions = [
-  { id: 1, name: 'Acme Corp', date: 'Aug 3, 2026', amount: '+$2,450.00', category: 'salary', status: 'completed', initials: 'AC', wallet: 'Main Account' },
-  { id: 2, name: 'Netflix', date: 'Aug 2, 2026', amount: '-$15.99', category: 'subscription', status: 'completed', initials: 'NF', wallet: 'Main Account' },
-  { id: 3, name: 'Starbucks', date: 'Aug 2, 2026', amount: '-$6.75', category: 'groceries', status: 'pending', initials: 'SB', wallet: 'Everyday' },
-  { id: 4, name: 'GitHub', date: 'Aug 1, 2026', amount: '-$9.00', category: 'subscription', status: 'completed', initials: 'GH', wallet: 'Main Account' },
-  { id: 5, name: 'Acme Corp', date: 'Aug 1, 2026', amount: '+$2,450.00', category: 'salary', status: 'completed', initials: 'AC', wallet: 'Main Account' },
-  { id: 6, name: 'Uber', date: 'Jul 31, 2026', amount: '-$32.10', category: 'travel', status: 'failed', initials: 'UB', wallet: 'Everyday' },
-  { id: 7, name: 'Transfer to Savings', date: 'Jul 30, 2026', amount: '-$500.00', category: 'transfer', status: 'completed', initials: 'TS', wallet: 'Savings' },
-  { id: 8, name: 'Amazon', date: 'Jul 29, 2026', amount: '-$89.97', category: 'shopping', status: 'completed', initials: 'AM', wallet: 'Everyday' },
-  { id: 9, name: 'Freelance Invoice', date: 'Jul 28, 2026', amount: '+$1,200.00', category: 'income', status: 'completed', initials: 'FI', wallet: 'Main Account' },
-  { id: 10, name: 'Whole Foods', date: 'Jul 27, 2026', amount: '-$54.32', category: 'groceries', status: 'completed', initials: 'WF', wallet: 'Main Account' },
-  { id: 11, name: 'Spotify', date: 'Jul 26, 2026', amount: '-$10.99', category: 'subscription', status: 'completed', initials: 'SP', wallet: 'Everyday' },
-  { id: 12, name: 'Booking.com', date: 'Jul 25, 2026', amount: '-$240.00', category: 'travel', status: 'refunded', initials: 'BC', wallet: 'Travel Card' },
+const initialTransactions = [
+  { id: 1, name: 'Acme Corp', date: 'Aug 3, 2026', amount: '+Rp2.450.000', category: 'salary', status: 'completed', initials: 'AC', wallet: 'Dana' },
+  { id: 2, name: 'Netflix', date: 'Aug 2, 2026', amount: '-Rp15.990', category: 'subscription', status: 'completed', initials: 'NF', wallet: 'ShopeePay' },
+  { id: 3, name: 'Starbucks', date: 'Aug 2, 2026', amount: '-Rp6.750', category: 'groceries', status: 'pending', initials: 'SB', wallet: 'GoPay' },
+  { id: 4, name: 'GitHub', date: 'Aug 1, 2026', amount: '-Rp9.000', category: 'subscription', status: 'completed', initials: 'GH', wallet: 'Dana' },
+  { id: 5, name: 'Acme Corp', date: 'Aug 1, 2026', amount: '+Rp2.450.000', category: 'salary', status: 'completed', initials: 'AC', wallet: 'Dana' },
+  { id: 6, name: 'Uber', date: 'Jul 31, 2026', amount: '-Rp32.100', category: 'travel', status: 'failed', initials: 'UB', wallet: 'GoPay' },
+  { id: 7, name: 'Transfer to Savings', date: 'Jul 30, 2026', amount: '-Rp500.000', category: 'transfer', status: 'completed', initials: 'TS', wallet: 'BCA' },
+  { id: 8, name: 'Amazon', date: 'Jul 29, 2026', amount: '-Rp89.970', category: 'shopping', status: 'completed', initials: 'AM', wallet: 'ShopeePay' },
+  { id: 9, name: 'Freelance Invoice', date: 'Jul 28, 2026', amount: '+Rp1.200.000', category: 'income', status: 'completed', initials: 'FI', wallet: 'Dana' },
+  { id: 10, name: 'Whole Foods', date: 'Jul 27, 2026', amount: '-Rp54.320', category: 'groceries', status: 'completed', initials: 'WF', wallet: 'BNI' },
+  { id: 11, name: 'Spotify', date: 'Jul 26, 2026', amount: '-Rp10.990', category: 'subscription', status: 'completed', initials: 'SP', wallet: 'ShopeePay' },
+  { id: 12, name: 'Booking.com', date: 'Jul 25, 2026', amount: '-Rp240.000', category: 'travel', status: 'completed', initials: 'BC', wallet: 'BCA' },
 ]
 
 const statusVariant = {
   completed: 'success',
   pending: 'warning',
   failed: 'destructive',
-  refunded: 'secondary',
 }
 
+const columns = [
+  {
+    key: 'name',
+    header: 'Transaction',
+    sortable: true,
+    render: (value, row) => (
+      <div className="flex items-center gap-3">
+        <Avatar className="size-9">
+          <AvatarImage src="" alt={row.name} />
+          <AvatarFallback className="text-xs">{row.initials}</AvatarFallback>
+        </Avatar>
+        <span className="font-medium">{value}</span>
+      </div>
+    ),
+  },
+  {
+    key: 'category',
+    header: 'Category',
+    sortable: true,
+    render: (value) => {
+      const cat = categories[value]
+      const Icon = cat.icon
+      return (
+        <div className="flex items-center gap-2">
+          <Icon className={`size-4 ${cat.tone}`} />
+          <span>{cat.label}</span>
+        </div>
+      )
+    },
+  },
+  {
+    key: 'wallet',
+    header: 'Wallet/Card',
+    sortable: true,
+  },
+  {
+    key: 'date',
+    header: 'Date',
+    sortable: true,
+  },
+  {
+    key: 'amount',
+    header: 'Amount',
+    sortable: true,
+    align: 'right',
+    render: (value) => (
+      <span className={value.startsWith('+') ? 'text-emerald-600' : ''}>
+        {value}
+      </span>
+    ),
+  },
+  {
+    key: 'status',
+    header: 'Status',
+    sortable: true,
+    render: (value) => (
+      <Badge variant={statusVariant[value]} className="capitalize">
+        {value}
+      </Badge>
+    ),
+  },
+]
+
 export function TransactionsPage() {
+  const [transactions, setTransactions] = useState(initialTransactions)
   const [query, setQuery] = useState('')
   const [category, setCategory] = useState('all')
   const [status, setStatus] = useState('all')
+  const [addOpen, setAddOpen] = useState(false)
+  const [editOpen, setEditOpen] = useState(false)
+  const [deleteOpen, setDeleteOpen] = useState(false)
+  const [selectedTx, setSelectedTx] = useState(null)
 
-  const filtered = allTransactions.filter((tx) => {
+  const wallets = [
+    { id: 1, name: 'Dana', number: '8890 0012 9022', masked: '•••• 9022', balanceIdr: 77800000, icon: Wallet, tone: 'bg-emerald-500/10 text-emerald-600' },
+    { id: 2, name: 'ShopeePay', number: '8890 0012 9022', masked: '•••• 9022', balanceIdr: 200000000, icon: Wallet, tone: 'bg-orange-500/10 text-orange-600' },
+    { id: 3, name: 'GoPay', number: '8890 0012 9022', masked: '•••• 9022', balanceIdr: 14200000, icon: Wallet, tone: 'bg-blue-500/10 text-blue-600' },
+  ]
+  const cards = [
+    { id: 4, name: 'BCA', number: '5031 8820 3345', masked: '•••• 3345', balanceIdr: 34000000, gradient: 'from-rose-600 to-orange-500' },
+    { id: 5, name: 'BNI', number: '1370 0298 4471', masked: '•••• 4471', balanceIdr: 80000000, gradient: 'from-indigo-600 to-purple-600' },
+  ]
+
+  const filtered = transactions.filter((tx) => {
     const matchesQuery = tx.name.toLowerCase().includes(query.toLowerCase())
     const matchesCategory = category === 'all' || tx.category === category
     const matchesStatus = status === 'all' || tx.status === status
     return matchesQuery && matchesCategory && matchesStatus
   })
+
+  const handleAdd = (tx) => {
+    setTransactions((prev) => [tx, ...prev])
+  }
+
+  const handleEdit = (updated) => {
+    setTransactions((prev) =>
+      prev.map((tx) => (tx.id === updated.id ? updated : tx))
+    )
+  }
+
+  const handleDelete = (id) => {
+    setTransactions((prev) => prev.filter((tx) => tx.id !== id))
+  }
+
+  const openEdit = (tx) => {
+    setSelectedTx(tx)
+    setEditOpen(true)
+  }
+
+  const openDelete = (tx) => {
+    setSelectedTx(tx)
+    setDeleteOpen(true)
+  }
+
+  const tableActions = (row) => (
+    <Dropdown>
+      <DropdownTrigger>
+        <Button variant="ghost" size="icon" className="ml-1" aria-label="Transaction options">
+          <MoreHorizontal className="size-4" />
+        </Button>
+      </DropdownTrigger>
+      <DropdownContent align="end">
+        <DropdownItem onClick={() => openEdit(row)}>
+          <Pencil className="size-4 mr-2" /> Edit
+        </DropdownItem>
+        <DropdownSeparator />
+        <DropdownItem className="text-destructive focus:text-destructive" onClick={() => openDelete(row)}>
+          <Trash2 className="size-4 mr-2" /> Delete
+        </DropdownItem>
+      </DropdownContent>
+    </Dropdown>
+  )
 
   return (
     <div className="space-y-6">
@@ -78,7 +201,7 @@ export function TransactionsPage() {
           <Button variant="outline">
             <Download className="size-4" /> Export
           </Button>
-          <Button>
+          <Button onClick={() => setAddOpen(true)}>
             <Plus className="size-4" /> New Transaction
           </Button>
         </div>
@@ -90,7 +213,6 @@ export function TransactionsPage() {
             <TabsTrigger value="all">All</TabsTrigger>
             <TabsTrigger value="income">Income</TabsTrigger>
             <TabsTrigger value="expenses">Expenses</TabsTrigger>
-            <TabsTrigger value="pending">Pending</TabsTrigger>
           </TabsList>
           <div className="flex flex-col gap-2 sm:flex-row">
             <div className="relative">
@@ -128,107 +250,25 @@ export function TransactionsPage() {
                 <SelectItem value="completed">Completed</SelectItem>
                 <SelectItem value="pending">Pending</SelectItem>
                 <SelectItem value="failed">Failed</SelectItem>
-                <SelectItem value="refunded">Refunded</SelectItem>
               </SelectContent>
             </Select>
           </div>
         </div>
 
         <TabsContent value="all">
-          <TransactionList transactions={filtered} />
+          <DataTable columns={columns} data={filtered} pageSize={10} showActions actions={tableActions} />
         </TabsContent>
         <TabsContent value="income">
-          <TransactionList transactions={filtered.filter((tx) => tx.amount.startsWith('+'))} />
+          <DataTable columns={columns} data={filtered.filter((tx) => tx.amount.startsWith('+'))} pageSize={10} showActions actions={tableActions} />
         </TabsContent>
         <TabsContent value="expenses">
-          <TransactionList transactions={filtered.filter((tx) => tx.amount.startsWith('-'))} />
-        </TabsContent>
-        <TabsContent value="pending">
-          <TransactionList transactions={filtered.filter((tx) => tx.status === 'pending')} />
+          <DataTable columns={columns} data={filtered.filter((tx) => tx.amount.startsWith('-'))} pageSize={10} showActions actions={tableActions} />
         </TabsContent>
       </Tabs>
-    </div>
-  )
-}
 
-function TransactionList({ transactions }) {
-  return (
-    <Card className="mt-4">
-      <CardHeader className="flex flex-row items-center justify-between space-y-0">
-        <div>
-          <CardTitle>Activity</CardTitle>
-          <CardDescription>{transactions.length} transactions</CardDescription>
-        </div>
-      </CardHeader>
-      <CardContent>
-        {transactions.length === 0 ? (
-          <div className="flex flex-col items-center gap-2 py-12 text-center">
-            <CircleAlert className="size-8 text-muted-foreground" />
-            <p className="text-sm font-medium">No transactions found</p>
-            <p className="text-sm text-muted-foreground">
-              Try adjusting your search or filters.
-            </p>
-          </div>
-        ) : (
-          <div className="space-y-1">
-            {transactions.map((tx) => {
-              const cat = categories[tx.category]
-              const Icon = cat.icon
-              return (
-                <div
-                  key={tx.id}
-                  className="flex items-center gap-4 rounded-lg p-2 transition-colors hover:bg-accent"
-                >
-                  <Avatar className="size-9">
-                    <AvatarImage src="" alt={tx.name} />
-                    <AvatarFallback className="text-xs">{tx.initials}</AvatarFallback>
-                  </Avatar>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium">{tx.name}</p>
-                    <p className="truncate text-xs text-muted-foreground">
-                      {tx.wallet} · {tx.date}
-                    </p>
-                  </div>
-                  <div className="hidden items-center gap-2 sm:flex">
-                    <Icon className={`size-4 ${cat.tone}`} />
-                    <span className="text-sm text-muted-foreground">{cat.label}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="text-right">
-                      <p
-                        className={`text-sm font-medium ${
-                          tx.amount.startsWith('+') ? 'text-emerald-600' : ''
-                        }`}
-                      >
-                        {tx.amount}
-                      </p>
-                      <Badge variant={statusVariant[tx.status]} className="mt-0.5 capitalize">
-                        {tx.status}
-                      </Badge>
-                    </div>
-                    <Dropdown>
-                      <DropdownTrigger>
-                        <Button variant="ghost" size="icon" className="ml-1" aria-label="Transaction options">
-                          <MoreHorizontal className="size-4" />
-                        </Button>
-                      </DropdownTrigger>
-                      <DropdownContent align="end">
-                        <DropdownItem>View details</DropdownItem>
-                        <DropdownItem>Add note</DropdownItem>
-                        <DropdownItem>Duplicate</DropdownItem>
-                        <DropdownSeparator />
-                        <DropdownItem className="text-destructive focus:text-destructive">
-                          Report issue
-                        </DropdownItem>
-                      </DropdownContent>
-                    </Dropdown>
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        )}
-      </CardContent>
-    </Card>
+      <AddTransactionDialog open={addOpen} onOpenChange={setAddOpen} onSubmit={handleAdd} wallets={wallets} cards={cards} />
+      <EditTransactionDialog transaction={selectedTx} open={editOpen} onOpenChange={setEditOpen} onSubmit={handleEdit} wallets={wallets} cards={cards} />
+      <DeleteTransactionDialog transaction={selectedTx} open={deleteOpen} onOpenChange={setDeleteOpen} onConfirm={handleDelete} />
+    </div>
   )
 }

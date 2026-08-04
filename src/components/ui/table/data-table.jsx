@@ -202,7 +202,7 @@ const DataTable = forwardRef(
                     return (
                       <TableCell
                         key={column.key}
-                        className={getAlign(column)}
+                        className={cn(getAlign(column), "overflow-hidden text-nowrap")}
                       >
                         {column.render ? column.render(value, row) : value}
                       </TableCell>
