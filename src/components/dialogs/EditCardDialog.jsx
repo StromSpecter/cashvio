@@ -29,10 +29,9 @@ export function EditCardDialog({ account, open, onOpenChange, onSubmit }) {
     if (!account || !bank.trim() || !number.trim()) return;
     const clean = number.replace(/\s+/g, "");
     onSubmit({
-      ...account,
+      id: account.id,
       bank: bank.trim(),
       number: clean,
-      masked: `•••• •••• ${clean.slice(-4)}`,
       balanceIdr: parseFloat(balance) || 0,
     });
     onOpenChange(false);

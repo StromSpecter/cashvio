@@ -9,7 +9,7 @@ import {
   LayoutGrid,
   List,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Button } from "../../components/ui/button";
 import {
   Card,
@@ -30,41 +30,24 @@ import {
 import { AddCardDialog } from "../../components/dialogs/AddCardDialog";
 import { EditCardDialog } from "../../components/dialogs/EditCardDialog";
 import { DeleteCardDialog } from "../../components/dialogs/DeleteCardDialog";
+import {
+  getCards,
+  createCard,
+  updateCard,
+  deleteCard,
+} from "../../lib/api";
+import { toast } from "../../lib/toast.js";
 
-const initialAccounts = [
-  {
-    id: 1,
-    bank: "Bank Central Asia",
-    number: "0834 5678 9012",
-    masked: "•••• •••• 9012",
-    balanceIdr: 295000000,
-    gradient: "from-zinc-900 to-zinc-700",
-  },
-  {
-    id: 2,
-    bank: "Bank Mandiri",
-    number: "1370 0298 4471",
-    masked: "•••• •••• 4471",
-    balanceIdr: 77800000,
-    gradient: "from-indigo-600 to-purple-600",
-  },
-  {
-    id: 3,
-    bank: "DBS Bank",
-    number: "5031 8820 3345",
-    masked: "•••• •••• 3345",
-    balanceIdr: 34000000,
-    gradient: "from-emerald-600 to-teal-600",
-  },
-  {
-    id: 4,
-    bank: "Bank Negara Indonesia",
-    number: "0111 3025 6620",
-    masked: "•••• •••• 6620",
-    balanceIdr: 160000000,
-    gradient: "from-rose-600 to-orange-500",
-  },
-];
+const DEFAULT_GRADIENT = "from-zinc-900 to-zinc-700";
+
+const normalize = (c) => ({
+  id: c.id,
+  bank: c.bank,
+  number: c.number || "",
+  masked: c.masked || "••••",
+  balanceIdr: c.balance_idr || 0,
+  gradient: c.gradient || DEFAULT_GRADIENT,
+});
 
 function formatBalance(amountIdr) {
   return new Intl.NumberFormat("id-ID", {
@@ -156,11 +139,32 @@ function AccountActions({ onEdit, onDelete, tone = "default" }) {
 export function CardsPage() {
   const [showNumber, setShowNumber] = useState(false);
   const [view, setView] = useState("card");
-  const [accounts, setAccounts] = useState(initialAccounts);
+  const [accounts, setAccounts] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [cardPage, setCardPage] = useState(1);
   const [addOpen, setAddOpen] = useState(false);
   const [editTarget, setEditTarget] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const fetchedRef = useRef(false);
+
+  const load = useCallback(async () => {
+    const { data } = await getCards({ limit: 100 })
+    return data
+  }, [])
+
+  useEffect(() => {
+    if (fetchedRef.current) return
+    fetchedRef.current = true
+    load()
+      .then((data) => {
+        setAccounts(data.map(normalize))
+        setLoading(false)
+      })
+      .catch((e) => {
+        setLoading(false)
+        toast.error(e.message)
+      })
+  }, [load])
 
   const cardPageSize = 4;
   const cardTotalPages = Math.max(
@@ -178,18 +182,45 @@ export function CardsPage() {
     accounts.reduce((sum, a) => sum + a.balanceIdr, 0),
   );
 
-  const handleDelete = (id) => {
-    setAccounts((prev) => prev.filter((a) => a.id !== id));
+  const handleDelete = async (id) => {
+    try {
+      await deleteCard(id);
+      setAccounts((prev) => prev.filter((a) => a.id !== id));
+      toast.success("Account deleted");
+    } catch (e) {
+      toast.error(e.message);
+    }
   };
 
-  const handleAdd = (account) => {
-    setAccounts((prev) => [...prev, account]);
+  const handleAdd = async (form) => {
+    try {
+      const { data } = await createCard({
+        bank: form.bank,
+        number: form.number,
+        balance_idr: form.balanceIdr,
+        gradient: DEFAULT_GRADIENT,
+      });
+      setAccounts((prev) => [normalize(data), ...prev]);
+      toast.success("Account created");
+    } catch (e) {
+      toast.error(e.message);
+    }
   };
 
-  const handleEdit = (updated) => {
-    setAccounts((prev) =>
-      prev.map((a) => (a.id === updated.id ? updated : a))
-    );
+  const handleEdit = async (form) => {
+    try {
+      const { data } = await updateCard(form.id, {
+        bank: form.bank,
+        number: form.number,
+        balance_idr: form.balanceIdr,
+      });
+      setAccounts((prev) =>
+        prev.map((a) => (a.id === data.id ? normalize(data) : a))
+      );
+      toast.success("Account updated");
+    } catch (e) {
+      toast.error(e.message);
+    }
   };
 
   const columns = [
@@ -354,10 +385,14 @@ export function CardsPage() {
               <Landmark className="size-8 text-muted-foreground" />
             </div>
             <div>
-              <h2 className="font-semibold">No bank accounts yet</h2>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Link your first bank account to start tracking your saldo.
-              </p>
+              <h2 className="font-semibold">
+                {loading ? "Loading accounts..." : "No bank accounts yet"}
+              </h2>
+              {!loading && (
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Link your first bank account to start tracking your saldo.
+                </p>
+              )}
             </div>
           </CardContent>
         </Card>

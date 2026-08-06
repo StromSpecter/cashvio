@@ -11,13 +11,6 @@ import {
   DialogDescription,
 } from "../ui/dialog";
 
-const gradients = [
-  "from-sky-600 to-cyan-600",
-  "from-orange-600 to-amber-500",
-  "from-slate-800 to-slate-600",
-  "from-fuchsia-600 to-pink-600",
-];
-
 export function AddCardDialog({ open, onOpenChange, onSubmit }) {
   const [bank, setBank] = useState("");
   const [number, setNumber] = useState("");
@@ -34,12 +27,9 @@ export function AddCardDialog({ open, onOpenChange, onSubmit }) {
     if (!bank.trim() || !number.trim()) return;
     const clean = number.replace(/\s+/g, "");
     onSubmit({
-      id: Date.now(),
       bank: bank.trim(),
       number: clean,
-      masked: `•••• •••• ${clean.slice(-4)}`,
       balanceIdr: parseFloat(balance) || 0,
-      gradient: gradients[Math.floor(Math.random() * gradients.length)],
     });
     reset();
     onOpenChange(false);
