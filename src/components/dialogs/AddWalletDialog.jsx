@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { Wallet, Landmark, RefreshCw, ArrowLeftRight } from "lucide-react";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
@@ -11,16 +10,6 @@ import {
   DialogTitle,
   DialogDescription,
 } from "../ui/dialog";
-
-const tones = [
-  "bg-primary text-primary-foreground",
-  "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
-  "bg-purple-500/10 text-purple-600 dark:text-purple-400",
-  "bg-amber-500/10 text-amber-600 dark:text-amber-400",
-  "bg-sky-500/10 text-sky-600 dark:text-sky-400",
-];
-
-const icons = [Wallet, Landmark, RefreshCw, ArrowLeftRight];
 
 export function AddWalletDialog({ open, onOpenChange, onSubmit }) {
   const [name, setName] = useState("");
@@ -38,14 +27,9 @@ export function AddWalletDialog({ open, onOpenChange, onSubmit }) {
     if (!name.trim()) return;
     const clean = number.replace(/\s+/g, "");
     onSubmit({
-      id: Date.now(),
       name: name.trim(),
       number: clean,
-      masked: clean ? `•••• ${clean.slice(-4)}` : "•••• ••••",
       balanceIdr: parseFloat(balance) || 0,
-      tone: tones[Math.floor(Math.random() * tones.length)],
-      icon: icons[Math.floor(Math.random() * icons.length)],
-      status: "active",
     });
     reset();
     onOpenChange(false);

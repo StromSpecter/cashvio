@@ -29,10 +29,9 @@ export function EditWalletDialog({ wallet, open, onOpenChange, onSubmit }) {
     if (!wallet || !name.trim()) return;
     const clean = number.replace(/\s+/g, "");
     onSubmit({
-      ...wallet,
+      id: wallet.id,
       name: name.trim(),
       number: clean,
-      masked: clean ? `•••• ${clean.slice(-4)}` : "•••• ••••",
       balanceIdr: parseFloat(balance) || 0,
     });
     onOpenChange(false);

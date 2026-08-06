@@ -34,7 +34,7 @@ export function DeleteWalletDialog({ wallet, open, onOpenChange, onConfirm }) {
               {wallet ? wallet.name : ""}
             </p>
             <p className="truncate text-xs text-muted-foreground">
-              {wallet ? `${wallet.type} · ${wallet.masked}` : ""}
+              {wallet ? `${wallet.name} · ${wallet.masked}` : ""}
             </p>
           </div>
         </div>

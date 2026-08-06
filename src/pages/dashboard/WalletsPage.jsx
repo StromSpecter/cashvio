@@ -9,7 +9,7 @@ import {
   LayoutGrid,
   List,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Button } from "../../components/ui/button";
 import { Badge } from "../../components/ui/badge";
 import {
@@ -31,36 +31,27 @@ import {
 import { AddWalletDialog } from "../../components/dialogs/AddWalletDialog";
 import { EditWalletDialog } from "../../components/dialogs/EditWalletDialog";
 import { DeleteWalletDialog } from "../../components/dialogs/DeleteWalletDialog";
+import {
+  getWallets,
+  createWallet,
+  updateWallet,
+  deleteWallet,
+} from "../../lib/api";
+import { toast } from "../../lib/toast.js";
 
-const initialWallets = [
-  {
-    id: 1,
-    name: "Savings",
-    number: "8890 0012 9022",
-    masked: "•••• 9022",
-    balanceIdr: 77800000,
-    icon: Wallet,
-    tone: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
-  },
-  {
-    id: 2,
-    name: "Savings",
-    number: "8890 0012 9022",
-    masked: "•••• 9022",
-    balanceIdr: 77800000,
-    icon: Wallet,
-    tone: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
-  },
-  {
-    id: 3,
-    name: "Savings",
-    number: "8890 0012 9022",
-    masked: "•••• 9022",
-    balanceIdr: 77800000,
-    icon: Wallet,
-    tone: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
-  },
-];
+const DEFAULT_TONE = "bg-primary text-primary-foreground";
+
+const normalize = (w) => ({
+  id: w.id,
+  name: w.name,
+  number: w.number || "",
+  masked: w.masked || "••••",
+  balanceIdr: w.balance_idr || 0,
+  tone: w.tone || DEFAULT_TONE,
+  icon: Wallet,
+  status: w.status,
+  primary: w.primary,
+});
 
 function formatBalance(amountIdr) {
   return new Intl.NumberFormat("id-ID", {
@@ -149,11 +140,32 @@ function WalletFace({
 export function WalletsPage() {
   const [showNumber, setShowNumber] = useState(false);
   const [view, setView] = useState("card");
-  const [wallets, setWallets] = useState(initialWallets);
+  const [wallets, setWallets] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [cardPage, setCardPage] = useState(1);
   const [addOpen, setAddOpen] = useState(false);
   const [editTarget, setEditTarget] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const fetchedRef = useRef(false);
+
+  const load = useCallback(async () => {
+    const { data } = await getWallets({ limit: 100 })
+    return data
+  }, [])
+
+  useEffect(() => {
+    if (fetchedRef.current) return
+    fetchedRef.current = true
+    load()
+      .then((data) => {
+        setWallets(data.map(normalize))
+        setLoading(false)
+      })
+      .catch((e) => {
+        setLoading(false)
+        toast.error(e.message)
+      })
+  }, [load])
 
   const cardPageSize = 4;
   const cardTotalPages = Math.max(1, Math.ceil(wallets.length / cardPageSize));
@@ -169,16 +181,45 @@ export function WalletsPage() {
     wallets.reduce((sum, w) => sum + w.balanceIdr, 0),
   );
 
-  const handleDelete = (id) => {
-    setWallets((prev) => prev.filter((w) => w.id !== id));
+  const handleDelete = async (id) => {
+    try {
+      await deleteWallet(id);
+      setWallets((prev) => prev.filter((w) => w.id !== id));
+      toast.success("Wallet deleted");
+    } catch (e) {
+      toast.error(e.message);
+    }
   };
 
-  const handleAdd = (wallet) => {
-    setWallets((prev) => [...prev, wallet]);
+  const handleAdd = async (form) => {
+    try {
+      const { data } = await createWallet({
+        name: form.name,
+        number: form.number,
+        balance_idr: form.balanceIdr,
+        primary: false,
+      });
+      setWallets((prev) => [normalize(data), ...prev]);
+      toast.success("Wallet created");
+    } catch (e) {
+      toast.error(e.message);
+    }
   };
 
-  const handleEdit = (updated) => {
-    setWallets((prev) => prev.map((w) => (w.id === updated.id ? updated : w)));
+  const handleEdit = async (form) => {
+    try {
+      const { data } = await updateWallet(form.id, {
+        name: form.name,
+        number: form.number,
+        balance_idr: form.balanceIdr,
+      });
+      setWallets((prev) =>
+        prev.map((w) => (w.id === data.id ? normalize(data) : w))
+      );
+      toast.success("Wallet updated");
+    } catch (e) {
+      toast.error(e.message);
+    }
   };
 
   const columns = [
@@ -341,10 +382,14 @@ export function WalletsPage() {
               <Wallet className="size-8 text-muted-foreground" />
             </div>
             <div>
-              <h2 className="font-semibold">No wallets yet</h2>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Create your first wallet to organize your money by purpose.
-              </p>
+              <h2 className="font-semibold">
+                {loading ? "Loading wallets..." : "No wallets yet"}
+              </h2>
+              {!loading && (
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Create your first wallet to organize your money by purpose.
+                </p>
+              )}
             </div>
           </CardContent>
         </Card>
