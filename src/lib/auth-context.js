@@ -4,6 +4,7 @@ import { setAuthToken } from './api'
 export const TOKEN_KEY = 'auth_token'
 
 export const AuthContext = createContext({
+  user: null,
   isAuthenticated: false,
   isLoading: false,
   login: () => {},

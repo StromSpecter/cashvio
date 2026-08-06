@@ -4,6 +4,7 @@ import { Button } from '../ui/button'
 import { Input } from '../ui/input'
 import { Avatar, AvatarImage, AvatarFallback } from '../ui/avatar'
 import { useTheme } from '../../lib/theme.jsx'
+import { useAuth } from '../../lib/auth-context.js'
 import {
   Dropdown,
   DropdownTrigger,
@@ -15,6 +16,15 @@ import {
 
 export function DashboardHeader({ onMenuClick }) {
   const { theme, toggle } = useTheme()
+  const { user, logout } = useAuth()
+  const name = user?.name || 'User'
+  const email = user?.email || ''
+  const initials = name
+    .split(' ')
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0].toUpperCase())
+    .join('')
   const [notifications] = useState([
     { id: 1, title: 'New deposit received', desc: '+Rp2.450.000 · Just now' },
     { id: 2, title: 'Withdrawal approved', desc: '-Rp120.000 · 2h ago' },
@@ -95,15 +105,15 @@ export function DashboardHeader({ onMenuClick }) {
               >
                 <Avatar className="size-8">
                   <AvatarImage src="" alt="User" />
-                  <AvatarFallback>AK</AvatarFallback>
+                  <AvatarFallback>{initials || 'U'}</AvatarFallback>
                 </Avatar>
                 <ChevronDown className="hidden sm:block size-4 text-muted-foreground" />
               </button>
             </DropdownTrigger>
             <DropdownContent align="end" className="w-56">
               <DropdownLabel>
-                <span className="block font-semibold text-foreground">Alex Kim</span>
-                <span className="text-xs font-normal">alex@cashvio.com</span>
+                <span className="block font-semibold text-foreground">{name}</span>
+                <span className="text-xs font-normal">{email}</span>
               </DropdownLabel>
               <DropdownSeparator />
               <DropdownItem>
@@ -113,7 +123,7 @@ export function DashboardHeader({ onMenuClick }) {
                 <Settings className="size-4" /> Settings
               </DropdownItem>
               <DropdownSeparator />
-              <DropdownItem className="text-destructive focus:text-destructive">
+              <DropdownItem className="text-destructive focus:text-destructive" onClick={() => logout()}>
                 <LogOut className="size-4" /> Log out
               </DropdownItem>
             </DropdownContent>

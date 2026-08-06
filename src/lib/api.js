@@ -9,6 +9,7 @@ export const API = {
   USER: '/api/v1/users',
   CARD: '/api/v1/cards',
   WALLET: '/api/v1/wallets',
+  TRANSACTION: '/api/v1/transactions',
   HEALTH: '/health',
 }
 
@@ -19,6 +20,7 @@ export const ENDPOINTS = {
 
   // Users
   USERS: API.USER,
+  ME: `${API.USER}/me`,
   USER: (id) => `${API.USER}/${id}`,
 
   // Cards
@@ -28,6 +30,10 @@ export const ENDPOINTS = {
   // Wallets
   WALLETS: API.WALLET,
   WALLET: (id) => `${API.WALLET}/${id}`,
+
+  // Transactions
+  TRANSACTIONS: API.TRANSACTION,
+  TRANSACTION: (id) => `${API.TRANSACTION}/${id}`,
 
   // Health
   HEALTH: API.HEALTH,
@@ -76,6 +82,7 @@ export const register = (payload) => api.post(ENDPOINTS.REGISTER, payload)
 export const login = (payload) => api.post(ENDPOINTS.LOGIN, payload)
 
 // --- Users ---
+export const getMe = () => api.get(ENDPOINTS.ME)
 export const getUsers = (params) => api.get(ENDPOINTS.USERS, { params })
 export const getUser = (id) => api.get(ENDPOINTS.USER(id))
 export const createUser = (payload) => api.post(ENDPOINTS.USERS, payload)
@@ -95,6 +102,13 @@ export const getWallet = (id) => api.get(ENDPOINTS.WALLET(id))
 export const createWallet = (payload) => api.post(ENDPOINTS.WALLETS, payload)
 export const updateWallet = (id, payload) => api.put(ENDPOINTS.WALLET(id), payload)
 export const deleteWallet = (id) => api.delete(ENDPOINTS.WALLET(id))
+
+// --- Transactions ---
+export const getTransactions = (params) => api.get(ENDPOINTS.TRANSACTIONS, { params })
+export const getTransaction = (id) => api.get(ENDPOINTS.TRANSACTION(id))
+export const createTransaction = (payload) => api.post(ENDPOINTS.TRANSACTIONS, payload)
+export const updateTransaction = (id, payload) => api.put(ENDPOINTS.TRANSACTION(id), payload)
+export const deleteTransaction = (id) => api.delete(ENDPOINTS.TRANSACTION(id))
 
 // --- Health ---
 export const health = () => api.get(ENDPOINTS.HEALTH)

@@ -1,7 +1,7 @@
-import { useState, useCallback, useMemo } from 'react'
+import { useState, useCallback, useMemo, useEffect, useRef } from 'react'
 import { Navigate, useLocation } from 'react-router'
 import { useAuth, AuthContext, readToken, setSession, persistToken } from './auth-context.js'
-import { login as loginApi, register as registerApi } from './api'
+import { login as loginApi, register as registerApi, getMe } from './api'
 
 // Seeds token + axios header synchronously from storage (no effect needed).
 const useInitialToken = () => {
@@ -17,6 +17,27 @@ const useInitialToken = () => {
 
 export function AuthProvider({ children }) {
   const [token, setToken] = useInitialToken()
+  const [user, setUser] = useState(null)
+  const fetchedTokenRef = useRef(null)
+
+  const fetchUser = useCallback(async () => {
+    const { data } = await getMe()
+    setUser(data)
+    return data
+  }, [])
+
+  useEffect(() => {
+    if (!token || fetchedTokenRef.current === token) return
+    fetchedTokenRef.current = token
+    getMe()
+      .then(({ data }) => {
+        setUser(data)
+      })
+      .catch(() => {
+        setSession(null)
+        setToken(null)
+      })
+  }, [token, setToken])
 
   const login = useCallback(async (payload) => {
     const { data } = await loginApi(payload)
@@ -24,7 +45,8 @@ export function AuthProvider({ children }) {
     const { token: jwt, expires_in } = data
     persistToken(jwt, expires_in)
     setToken(jwt)
-  }, [setToken])
+    await fetchUser()
+  }, [setToken, fetchUser])
 
   const register = useCallback(async (payload) => {
     const res = await registerApi(payload)
@@ -34,10 +56,12 @@ export function AuthProvider({ children }) {
   const logout = useCallback(() => {
     setSession(null)
     setToken(null)
+    setUser(null)
   }, [setToken])
 
   const value = useMemo(
     () => ({
+      user,
       token,
       isAuthenticated: Boolean(token),
       isLoading: false,
@@ -45,7 +69,7 @@ export function AuthProvider({ children }) {
       register,
       logout,
     }),
-    [token, login, register, logout]
+    [user, token, login, register, logout]
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
