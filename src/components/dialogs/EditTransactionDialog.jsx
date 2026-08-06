@@ -33,32 +33,60 @@ const categoryOptions = [
 const statusOptions = ['completed', 'pending', 'failed']
 
 export function EditTransactionDialog({ transaction, open, onOpenChange, onSubmit, wallets = [], cards = [] }) {
-  const [name, setName] = useState(transaction?.name || '')
-  const [amount, setAmount] = useState(transaction?.amount || '')
-  const [type, setType] = useState(
-    transaction?.amount.startsWith('+') ? 'income' : 'expense'
-  )
-  const [category, setCategory] = useState(transaction?.category || 'shopping')
-  const [date, setDate] = useState(transaction?.date || '')
-  const [status, setStatus] = useState(transaction?.status || 'completed')
-  const [wallet, setWallet] = useState(transaction?.wallet || '')
+  const [name, setName] = useState('')
+  const [amount, setAmount] = useState('')
+  const [type, setType] = useState('expense')
+  const [category, setCategory] = useState('shopping')
+  const [date, setDate] = useState('')
+  const [status, setStatus] = useState('completed')
+  const [account, setAccount] = useState('')
+  const [error, setError] = useState('')
+  const [prevTx, setPrevTx] = useState(null)
 
-  const allWallets = [...wallets, ...cards]
+  if (transaction !== prevTx) {
+    setPrevTx(transaction)
+    setName(transaction?.name || '')
+    setAmount(transaction ? String(Math.abs(transaction.amount)) : '')
+    setType(transaction?.type || 'expense')
+    setCategory(transaction?.category || 'shopping')
+    setDate(transaction?.date ? transaction.date.slice(0, 10) : '')
+    setStatus(transaction?.status || 'completed')
+    setAccount(transaction ? `${transaction.account_type}:${transaction.account_id}` : '')
+    setError('')
+  }
+
+  const accounts = [
+    ...wallets.map((w) => ({ key: `wallet:${w.id}`, label: w.name, masked: w.masked })),
+    ...cards.map((c) => ({ key: `card:${c.id}`, label: c.name, masked: c.masked })),
+  ]
 
   const handleSubmit = (e) => {
     e.preventDefault()
-    if (!name.trim() || !amount.trim()) return
-    const num = parseFloat(amount.replace(/[^\d.-]/g, ''))
-    const prefix = type === 'income' ? '+' : '-'
-    const formatted = `${prefix}Rp${Math.abs(num).toLocaleString('id-ID', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`
+    if (!transaction) return
+    if (!name.trim()) {
+      setError('Name is required')
+      return
+    }
+    if (!(parseFloat(amount) > 0)) {
+      setError('Amount must be greater than 0')
+      return
+    }
+    if (!account) {
+      setError('Please select a wallet or card')
+      return
+    }
+    setError('')
+    const [accountType, accountId] = account.split(':')
     onSubmit({
-      ...transaction,
+      id: transaction.id,
       name: name.trim(),
-      date: date || transaction.date,
-      amount: formatted,
+      amount: Math.abs(parseFloat(amount)),
+      type,
       category,
       status,
-      wallet: wallet || transaction.wallet,
+      account_type: accountType,
+      account_id: accountId,
+      date: date || undefined,
     })
     onOpenChange(false)
   }
@@ -106,22 +134,22 @@ export function EditTransactionDialog({ transaction, open, onOpenChange, onSubmi
               </SelectContent>
             </Select>
           </div>
-          {allWallets.length > 0 && (
+          {accounts.length > 0 ? (
             <div className="space-y-2">
               <Label htmlFor="edit-tx-wallet">
                 {type === 'income' ? 'Destination' : 'Source'} wallet/card
               </Label>
-              <Select value={wallet} onValueChange={setWallet}>
+              <Select value={account} onValueChange={setAccount}>
                 <SelectTrigger id="edit-tx-wallet">
                   <SelectValue placeholder="Select wallet or card" />
                 </SelectTrigger>
                 <SelectContent>
-                  {allWallets.map((w) => (
-                    <SelectItem key={w.id} value={w.name}>
+                  {accounts.map((a) => (
+                    <SelectItem key={a.key} value={a.key}>
                       <div className="flex items-center justify-between w-full">
-                        <span>{w.name}</span>
+                        <span>{a.label}</span>
                         <span className="text-xs text-muted-foreground">
-                          {w.masked}
+                          {a.masked}
                         </span>
                       </div>
                     </SelectItem>
@@ -129,6 +157,10 @@ export function EditTransactionDialog({ transaction, open, onOpenChange, onSubmi
                 </SelectContent>
               </Select>
             </div>
+          ) : (
+            <p className="rounded-md border border-border bg-muted/50 p-3 text-sm text-muted-foreground">
+              No wallets or cards yet. Add one before recording a transaction.
+            </p>
           )}
           <div className="space-y-2">
             <Label htmlFor="edit-tx-category">Category</Label>
@@ -169,7 +201,8 @@ export function EditTransactionDialog({ transaction, open, onOpenChange, onSubmi
               </SelectContent>
             </Select>
           </div>
-          <DialogFooter>
+          <DialogFooter className="flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-end">
+            {error && <p className="text-sm text-destructive">{error}</p>}
             <Button
               type="button"
               variant="outline"
@@ -177,7 +210,7 @@ export function EditTransactionDialog({ transaction, open, onOpenChange, onSubmi
             >
               Cancel
             </Button>
-            <Button type="submit">
+            <Button type="submit" disabled={accounts.length === 0}>
               <Pencil className="size-4" /> Save Changes
             </Button>
           </DialogFooter>

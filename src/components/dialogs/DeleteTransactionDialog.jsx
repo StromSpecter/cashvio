@@ -10,6 +10,15 @@ import {
 } from '../ui/dialog'
 
 export function DeleteTransactionDialog({ transaction, open, onOpenChange, onConfirm }) {
+  const formatAmount = (t) => {
+    if (!t) return ''
+    const sign = t.type === 'income' ? '+' : '-'
+    return `${sign}Rp${Math.abs(t.amount).toLocaleString('id-ID')}`
+  }
+  const formatDate = (value) => {
+    if (!value) return ''
+    return new Date(value).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+  }
   const handleConfirm = () => {
     onConfirm(transaction.id)
     onOpenChange(false)
@@ -33,7 +42,7 @@ export function DeleteTransactionDialog({ transaction, open, onOpenChange, onCon
               {transaction ? transaction.name : ''}
             </p>
             <p className="truncate text-xs text-muted-foreground">
-              {transaction ? `${transaction.amount} · ${transaction.date}` : ''}
+              {transaction ? `${formatAmount(transaction)} · ${formatDate(transaction.date)}` : ''}
             </p>
           </div>
         </div>

@@ -39,9 +39,13 @@ export function AddTransactionDialog({ open, onOpenChange, onSubmit, wallets = [
   const [category, setCategory] = useState('shopping')
   const [date, setDate] = useState('')
   const [status, setStatus] = useState('completed')
-  const [wallet, setWallet] = useState('')
+  const [account, setAccount] = useState('')
+  const [error, setError] = useState('')
 
-  const allWallets = [...wallets, ...cards]
+  const accounts = [
+    ...wallets.map((w) => ({ key: `wallet:${w.id}`, label: w.name, masked: w.masked })),
+    ...cards.map((c) => ({ key: `card:${c.id}`, label: c.name, masked: c.masked })),
+  ]
 
   const reset = () => {
     setName('')
@@ -50,24 +54,35 @@ export function AddTransactionDialog({ open, onOpenChange, onSubmit, wallets = [
     setCategory('shopping')
     setDate('')
     setStatus('completed')
-    setWallet('')
+    setAccount('')
+    setError('')
   }
 
   const handleSubmit = (e) => {
     e.preventDefault()
-    if (!name.trim() || !amount.trim()) return
-    const num = parseFloat(amount.replace(/[^\d.-]/g, ''))
-    const prefix = type === 'income' ? '+' : '-'
-    const formatted = `${prefix}Rp${Math.abs(num).toLocaleString('id-ID', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`
+    if (!name.trim()) {
+      setError('Name is required')
+      return
+    }
+    if (!(parseFloat(amount) > 0)) {
+      setError('Amount must be greater than 0')
+      return
+    }
+    if (!account) {
+      setError('Please select a wallet or card')
+      return
+    }
+    setError('')
+    const [accountType, accountId] = account.split(':')
     onSubmit({
-      id: Date.now(),
       name: name.trim(),
-      date: date || '',
-      amount: formatted,
+      amount: Math.abs(parseFloat(amount)),
+      type,
       category,
       status,
-      initials: name.trim().split(' ').map((w) => w[0]).join('').toUpperCase().slice(0, 2),
-      wallet: wallet || 'Main Account',
+      account_type: accountType,
+      account_id: accountId,
+      date: date || undefined,
     })
     reset()
     onOpenChange(false)
@@ -116,22 +131,22 @@ export function AddTransactionDialog({ open, onOpenChange, onSubmit, wallets = [
               </SelectContent>
             </Select>
           </div>
-          {allWallets.length > 0 && (
+          {accounts.length > 0 ? (
             <div className="space-y-2">
               <Label htmlFor="add-tx-wallet">
                 {type === 'income' ? 'Destination' : 'Source'} wallet/card
               </Label>
-              <Select value={wallet} onValueChange={setWallet}>
+              <Select value={account} onValueChange={setAccount}>
                 <SelectTrigger id="add-tx-wallet">
                   <SelectValue placeholder="Select wallet or card" />
                 </SelectTrigger>
                 <SelectContent>
-                  {allWallets.map((w) => (
-                    <SelectItem key={w.id} value={w.name}>
+                  {accounts.map((a) => (
+                    <SelectItem key={a.key} value={a.key}>
                       <div className="flex items-center justify-between w-full">
-                        <span>{w.name}</span>
+                        <span>{a.label}</span>
                         <span className="text-xs text-muted-foreground">
-                          {w.masked}
+                          {a.masked}
                         </span>
                       </div>
                     </SelectItem>
@@ -139,6 +154,10 @@ export function AddTransactionDialog({ open, onOpenChange, onSubmit, wallets = [
                 </SelectContent>
               </Select>
             </div>
+          ) : (
+            <p className="rounded-md border border-border bg-muted/50 p-3 text-sm text-muted-foreground">
+              No wallets or cards yet. Add one before recording a transaction.
+            </p>
           )}
           <div className="space-y-2">
             <Label htmlFor="add-tx-category">Category</Label>
@@ -179,7 +198,8 @@ export function AddTransactionDialog({ open, onOpenChange, onSubmit, wallets = [
               </SelectContent>
             </Select>
           </div>
-          <DialogFooter>
+          <DialogFooter className="flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-end">
+            {error && <p className="text-sm text-destructive">{error}</p>}
             <Button
               type="button"
               variant="outline"
@@ -187,7 +207,7 @@ export function AddTransactionDialog({ open, onOpenChange, onSubmit, wallets = [
             >
               Cancel
             </Button>
-            <Button type="submit">
+            <Button type="submit" disabled={accounts.length === 0}>
               <Plus className="size-4" /> Add Transaction
             </Button>
           </DialogFooter>
