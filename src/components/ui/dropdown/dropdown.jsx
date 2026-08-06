@@ -1,4 +1,4 @@
-import { forwardRef, createContext, useContext, useState, useRef, useEffect } from 'react'
+import { forwardRef, createContext, useContext, useState, useRef, useEffect, useLayoutEffect } from 'react'
 import { cn } from '../../../lib/utils.js'
 
 const DropdownContext = createContext()
@@ -10,7 +10,8 @@ function Dropdown({ children }) {
   useEffect(() => {
     if (!open) return
     const handleClickOutside = (e) => {
-      if (ref.current && !ref.current.contains(e.target)) setOpen(false)
+      if (ref.current && ref.current.contains(e.target)) return
+      setOpen(false)
     }
     const handleEsc = (e) => {
       if (e.key === 'Escape') setOpen(false)
@@ -24,8 +25,8 @@ function Dropdown({ children }) {
   }, [open])
 
   return (
-    <DropdownContext.Provider value={{ open, setOpen }}>
-      <div ref={ref} className="relative inline-block">
+    <DropdownContext.Provider value={{ open, setOpen, triggerRef: ref }}>
+      <div ref={ref} className="inline-block">
         {children}
       </div>
     </DropdownContext.Provider>
@@ -50,15 +51,42 @@ function DropdownTrigger({ asChild, children, ...props }) {
 DropdownTrigger.displayName = 'DropdownTrigger'
 
 const DropdownContent = forwardRef(({ className, align = 'start', children, ...props }, ref) => {
-  const { open, setOpen } = useContext(DropdownContext)
+  const { open, setOpen, triggerRef } = useContext(DropdownContext)
+  const contentRef = useRef(null)
+  const [pos, setPos] = useState(null)
 
-  return open ? (
+  useLayoutEffect(() => {
+    if (!open) return
+    const update = () => {
+      const el = triggerRef.current
+      if (!el) return
+      const menu = contentRef.current
+      const rect = el.getBoundingClientRect()
+      const menuH = menu ? menu.offsetHeight : 0
+      const menuW = menu ? menu.offsetWidth : 128
+      const spaceBelow = window.innerHeight - rect.bottom
+      const openUp = spaceBelow < menuH + 8 && rect.top > menuH
+      const top = openUp ? rect.top - menuH - 4 : rect.bottom + 4
+      const left = align === 'end' ? rect.right - menuW : rect.left
+      setPos({ top, left })
+    }
+    update()
+    window.addEventListener('resize', update)
+    return () => window.removeEventListener('resize', update)
+  }, [open, align, triggerRef])
+
+  if (!open) return null
+  return (
     <div
-      ref={ref}
+      ref={(node) => {
+        contentRef.current = node
+        if (typeof ref === 'function') ref(node)
+        else if (ref) ref.current = node
+      }}
+      style={pos ? { top: pos.top, left: pos.left } : undefined}
       className={cn(
-        'absolute z-50 min-w-[8rem] overflow-hidden rounded-md border border-border bg-background p-1 shadow-md',
+        'fixed z-50 min-w-[8rem] overflow-hidden rounded-md border border-border bg-background p-1 shadow-md',
         'animate-in fade-in-0 zoom-in-95 duration-150',
-        align === 'end' ? 'right-0' : 'left-0',
         className
       )}
       onClick={() => setOpen(false)}
@@ -67,7 +95,7 @@ const DropdownContent = forwardRef(({ className, align = 'start', children, ...p
     >
       {children}
     </div>
-  ) : null
+  )
 })
 DropdownContent.displayName = 'DropdownContent'
 
