@@ -1,14 +1,12 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import {
   Wallet,
   PiggyBank,
-  ShoppingBasket,
-  Globe,
   TrendingUp,
   Save,
-  Edit,
   Plus,
   Trash2,
+  Pencil,
 } from 'lucide-react'
 import { Button } from '../../components/ui/button'
 import { Badge } from '../../components/ui/badge'
@@ -25,7 +23,16 @@ import { ChartContainer, ChartLegend } from '../../components/ui/chart'
 import { PieChart } from '../../components/ui/chart'
 import { RadialChart } from '../../components/ui/chart'
 import { BarChart } from '../../components/ui/chart'
-import { SetBudgetDialog } from '../../components/dialogs/SetBudgetDialog'
+import { BudgetCategoryDialog } from '../../components/dialogs/BudgetCategoryDialog'
+import { DeleteBudgetCategoryDialog } from '../../components/dialogs/DeleteBudgetCategoryDialog'
+import { ICON_MAP, colorVar } from '../../components/dialogs/budget-constants'
+import {
+  getBudgetOverview,
+  createCategoryBudget,
+  updateCategoryBudget,
+  deleteCategoryBudget,
+} from '../../lib/api'
+import { toast } from '../../lib/toast.js'
 
 const formatRp = (value) => `Rp${Number(value).toLocaleString('id-ID')}`
 const monthYear = (iso) => new Date(iso).toLocaleDateString('id-ID', { month: 'long', year: 'numeric' })
@@ -49,6 +56,54 @@ const initialHistory = [
     createdAt: new Date(2026, 6, 31, 23, 59, 0).toISOString(),
   },
 ]
+
+const initialCategories = [
+  {
+    id: 'seed-needs',
+    name: 'Needs',
+    type: 'percent',
+    percent: 50,
+    amount: null,
+    color: 1,
+    icon: 'home',
+    desc: 'Food, rent, utilities, transport',
+  },
+  {
+    id: 'seed-wants',
+    name: 'Wants',
+    type: 'percent',
+    percent: 30,
+    amount: null,
+    color: 3,
+    icon: 'globe',
+    desc: 'Entertainment, dining out, non-essential shopping',
+  },
+  {
+    id: 'seed-invest',
+    name: 'Investment',
+    type: 'percent',
+    percent: 20,
+    amount: null,
+    color: 2,
+    icon: 'piggy',
+    desc: 'Savings, stocks, retirement funds',
+  },
+]
+
+function resolveBuckets(income, categories) {
+  return categories.map((c) => {
+    const isPct = c.type === 'percent'
+    const pct = isPct
+      ? Number(c.percent) || 0
+      : income > 0
+        ? Math.round(((Number(c.amount) || 0) / income) * 100)
+        : 0
+    const amount = isPct
+      ? Math.round((income * (Number(c.percent) || 0)) / 100)
+      : Number(c.amount) || 0
+    return { ...c, pct, amount }
+  })
+}
 
 function analyzeBudget({ target, spent }) {
   if (!target) {
@@ -81,44 +136,17 @@ function analyzeBudget({ target, spent }) {
   }
 }
 
-function BudgetBuckets({ income }) {
-  const buckets = [
-    {
-      key: 'needs',
-      label: 'Needs',
-      pct: 50,
-      amount: Math.round(income * 0.5),
-      color: 'var(--color-chart-1)',
-      icon: ShoppingBasket,
-      desc: 'Food, rent, utilities, transport',
-    },
-    {
-      key: 'wants',
-      label: 'Wants',
-      pct: 30,
-      amount: Math.round(income * 0.3),
-      color: 'var(--color-chart-3)',
-      icon: Globe,
-      desc: 'Entertainment, dining out, non-essential shopping',
-    },
-    {
-      key: 'invest',
-      label: 'Investment',
-      pct: 20,
-      amount: Math.round(income * 0.2),
-      color: 'var(--color-chart-2)',
-      icon: PiggyBank,
-      desc: 'Savings, stocks, retirement funds',
-    },
-  ]
+function BudgetBuckets({ income, spent, categories, onEdit, onDelete }) {
+  const buckets = resolveBuckets(income, categories)
+  const totalAllocated = buckets.reduce((sum, b) => sum + b.amount, 0)
+  const totalPct = buckets.reduce((sum, b) => sum + b.pct, 0)
 
-  const pieData = buckets.map((b) => ({ key: b.key, label: b.label, value: b.pct }))
+  const pieData = buckets.map((b) => ({ key: b.id, label: b.name, value: b.pct }))
   const pieConfig = Object.fromEntries(
-    buckets.map((b) => [b.key, { label: b.label, color: b.color }])
+    buckets.map((b) => [b.id, { label: b.name, color: colorVar(b.color) }])
   )
-  const barData = buckets.map((b) => ({ label: b.label, allocated: b.pct }))
+  const barData = buckets.map((b) => ({ label: b.name, allocated: b.pct }))
   const barConfig = { allocated: { label: 'Allocation %', color: 'var(--color-chart-4)' } }
-  const totalAllocated = buckets.reduce((sum, b) => sum + b.pct, 0)
 
   return (
     <>
@@ -143,9 +171,9 @@ function BudgetBuckets({ income }) {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{formatRp(spendingEstimate)}</div>
+            <div className="text-2xl font-bold">{formatRp(spent)}</div>
             <p className="mt-1 text-xs text-muted-foreground">
-              {Math.round((spendingEstimate / income) * 100)}% of income
+              {Math.round((spent / income) * 100)}% of income
             </p>
           </CardContent>
         </Card>
@@ -157,7 +185,7 @@ function BudgetBuckets({ income }) {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{formatRp(income - spendingEstimate)}</div>
+            <div className="text-2xl font-bold">{formatRp(income - totalAllocated)}</div>
             <p className="mt-1 text-xs text-muted-foreground">left to allocate</p>
           </CardContent>
         </Card>
@@ -169,42 +197,77 @@ function BudgetBuckets({ income }) {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{totalAllocated}%</div>
-            <p className="mt-1 text-xs text-muted-foreground">already allocated</p>
+            <div className="text-2xl font-bold">{totalPct}%</div>
+            <p className="mt-1 text-xs text-muted-foreground">{formatRp(totalAllocated)} budgeted</p>
           </CardContent>
         </Card>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-3">
-        {buckets.map((b) => {
-          const Icon = b.icon
-          return (
-            <Card key={b.key}>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-                  {b.label}
-                </CardTitle>
-                <div className="rounded-lg bg-accent p-1.5">
-                  <Icon className="size-4" />
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{formatRp(b.amount)}</div>
-                <p className="mt-1 text-xs text-muted-foreground">{b.desc}</p>
-              </CardContent>
-              <CardContent className="pt-0">
-                <ChartContainer
-                  config={{ [b.key]: { label: b.label, color: b.color } }}
-                  formatValue={(v) => `${v}%`}
-                  className="w-full"
-                >
-                  <RadialChart value={b.pct} max={100} height={140} showValue={false} showLabel strokeWidth={10} />
-                </ChartContainer>
-              </CardContent>
-            </Card>
-          )
-        })}
-      </div>
+      {buckets.length === 0 ? (
+        <Card className="flex flex-col items-center justify-center gap-3 py-12 text-center">
+          <div className="rounded-full bg-accent p-4">
+            <PiggyBank className="size-8 text-muted-foreground" />
+          </div>
+          <CardTitle>No budget categories yet</CardTitle>
+          <CardDescription>Add a category to start allocating your income.</CardDescription>
+        </Card>
+      ) : (
+        <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
+          {buckets.map((b) => {
+            const Icon = ICON_MAP[b.icon] || PiggyBank
+            return (
+              <Card key={b.id}>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <div className="flex items-center gap-2">
+                    <div
+                      className="rounded-lg p-1.5"
+                      style={{ background: 'var(--color-accent)', color: colorVar(b.color) }}
+                    >
+                      <Icon className="size-4" />
+                    </div>
+                    <CardTitle className="text-sm font-medium text-muted-foreground">
+                      {b.name}
+                    </CardTitle>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="size-7"
+                      aria-label={`Edit ${b.name}`}
+                      onClick={() => onEdit(b)}
+                    >
+                      <Pencil className="size-3.5" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="size-7 text-destructive"
+                      aria-label={`Delete ${b.name}`}
+                      onClick={() => onDelete(b)}
+                    >
+                      <Trash2 className="size-3.5" />
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{formatRp(b.amount)}</div>
+                  <p className="mt-1 text-xs text-muted-foreground">{b.desc || `${b.pct}% of income`}</p>
+                </CardContent>
+                <CardContent className="pt-0">
+                  <ChartContainer
+                    config={{ [b.id]: { label: b.name, color: colorVar(b.color) } }}
+                    formatValue={(v) => `${v}%`}
+                    className="w-full"
+                  >
+                    <RadialChart value={b.pct} max={100} height={140} showValue={false} showLabel strokeWidth={10} />
+                  </ChartContainer>
+                </CardContent>
+              </Card>
+            )
+          })}
+        </div>
+      )}
 
       <div className="grid gap-6 lg:grid-cols-2">
         <Card>
@@ -213,9 +276,13 @@ function BudgetBuckets({ income }) {
             <CardDescription>Share of each category against income</CardDescription>
           </CardHeader>
           <CardContent>
-            <ChartContainer config={pieConfig} formatValue={(v) => `${v}%`}>
-              <PieChart data={pieData} innerRadius={70} centerValue={`${totalAllocated}%`} centerLabel="Total Allocation" />
-            </ChartContainer>
+            {pieData.length === 0 ? (
+              <p className="py-8 text-center text-sm text-muted-foreground">No categories to chart.</p>
+            ) : (
+              <ChartContainer config={pieConfig} formatValue={(v) => `${v}%`}>
+                <PieChart data={pieData} innerRadius={70} centerValue={`${totalPct}%`} centerLabel="Total Allocation" />
+              </ChartContainer>
+            )}
           </CardContent>
         </Card>
 
@@ -230,16 +297,95 @@ function BudgetBuckets({ income }) {
             </ChartContainer>
             <ChartLegend
               className="mt-3"
-              items={[
-                { label: 'Needs (50%)', color: 'var(--color-chart-1)' },
-                { label: 'Wants (30%)', color: 'var(--color-chart-3)' },
-                { label: 'Investment (20%)', color: 'var(--color-chart-2)' },
-              ]}
+              items={buckets.map((b) => ({ label: `${b.name} (${b.pct}%)`, color: colorVar(b.color) }))}
             />
           </CardContent>
         </Card>
       </div>
     </>
+  )
+}
+
+function BudgetCategoriesTable({ income, categories, onEdit, onDelete }) {
+  const buckets = resolveBuckets(income, categories)
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Budget Categories</CardTitle>
+        <CardDescription>
+          Manage what budget categories exist and how each one is allocated
+          {income ? ` against your ${formatRp(income)} monthly income` : ''}.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="p-0">
+        {buckets.length === 0 ? (
+          <p className="p-6 text-sm text-muted-foreground">No budget categories yet.</p>
+        ) : (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Category</TableHead>
+                <TableHead className="text-right">Allocation</TableHead>
+                <TableHead className="text-right">Amount</TableHead>
+                <TableHead className="w-[5.5rem] text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {buckets.map((b) => {
+                const Icon = ICON_MAP[b.icon] || PiggyBank
+                return (
+                  <TableRow key={b.id}>
+                    <TableCell>
+                      <div className="flex items-center gap-3">
+                        <div
+                          className="rounded-lg p-1.5"
+                          style={{ background: 'var(--color-accent)', color: colorVar(b.color) }}
+                        >
+                          <Icon className="size-4" />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-medium">{b.name}</p>
+                          {b.desc && (
+                            <p className="truncate text-xs text-muted-foreground">{b.desc}</p>
+                          )}
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-right tabular-nums">
+                      {b.type === 'percent' ? `${b.percent}%` : formatRp(b.amount)}
+                    </TableCell>
+                    <TableCell className="text-right tabular-nums">{formatRp(b.amount)}</TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex items-center justify-end gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="size-7"
+                          aria-label={`Edit ${b.name}`}
+                          onClick={() => onEdit(b)}
+                        >
+                          <Pencil className="size-3.5" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="size-7 text-destructive"
+                          aria-label={`Delete ${b.name}`}
+                          onClick={() => onDelete(b)}
+                        >
+                          <Trash2 className="size-3.5" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                )
+              })}
+            </TableBody>
+          </Table>
+        )}
+      </CardContent>
+    </Card>
   )
 }
 
@@ -262,39 +408,73 @@ export function BudgetPage() {
     const stored = localStorage.getItem('cashvio-budget-target')
     return stored ? Number(JSON.parse(stored)) : null
   })
+  const [categories, setCategories] = useState(() => {
+    const stored = localStorage.getItem('cashvio-budget-categories')
+    return stored ? JSON.parse(stored) : initialCategories
+  })
   const [monthHistory, setMonthHistory] = useState(() => {
     const histRaw = localStorage.getItem('cashvio-budget-months')
     return histRaw ? JSON.parse(histRaw) : initialHistory
   })
-  const [dialogOpen, setDialogOpen] = useState(false)
-  const [editValue, setEditValue] = useState(null)
+  const [spent, setSpent] = useState(spendingEstimate)
+  const [categoryDialogOpen, setCategoryDialogOpen] = useState(false)
+  const [editingCategory, setEditingCategory] = useState(null)
+  const [deleteCategory, setDeleteCategory] = useState(null)
 
   const now = useMemo(() => new Date(), [])
   const currentMonthKey = `${now.toLocaleDateString('id-ID', { month: 'long' })} ${now.getFullYear()}`
+  const fetchedRef = useRef(false)
 
   useEffect(() => {
-    if (targetIncome != null) localStorage.setItem('cashvio-budget-target', JSON.stringify(targetIncome))
     if (monthHistory.length) localStorage.setItem('cashvio-budget-months', JSON.stringify(monthHistory))
-  }, [targetIncome, monthHistory])
+    localStorage.setItem('cashvio-budget-categories', JSON.stringify(categories))
+  }, [monthHistory, categories])
 
-  const openSet = () => {
-    setEditValue(null)
-    setDialogOpen(true)
+  useEffect(() => {
+    if (fetchedRef.current) return
+    fetchedRef.current = true
+    getBudgetOverview()
+      .then((ov) => {
+        if (!ov) return
+        setTargetIncome(ov.income || null)
+        setSpent(ov.spent ?? spendingEstimate)
+        setCategories(ov.categories && ov.categories.length ? ov.categories : [])
+      })
+      .catch(() => {})
+  }, [])
+
+  const openAddCategory = () => {
+    setEditingCategory(null)
+    setCategoryDialogOpen(true)
   }
-  const openEdit = () => {
-    setEditValue(targetIncome)
-    setDialogOpen(true)
+  const openEditCategory = (category) => {
+    setEditingCategory(category)
+    setCategoryDialogOpen(true)
   }
-  const submit = (payload) => {
-    const nowIso = new Date().toISOString()
-    const entry = { id: nowIso, amount: payload.amount, note: payload.note, createdAt: nowIso }
-    localStorage.setItem(
-      'cashvio-budget-target-history',
-      JSON.stringify([entry, ...JSON.parse(localStorage.getItem('cashvio-budget-target-history') || '[]')].slice(0, 20))
-    )
-    setTargetIncome(payload.amount)
+  const submitCategory = async (payload) => {
+    const isEdit = payload.id && categories.some((c) => c.id === payload.id)
+    try {
+      const saved = isEdit
+        ? await updateCategoryBudget(payload.id, payload)
+        : await createCategoryBudget(payload)
+      setCategories((prev) =>
+        isEdit ? prev.map((c) => (c.id === payload.id ? saved : c)) : [...prev, saved]
+      )
+    } catch (e) {
+      toast.error(e.message)
+      setCategories((prev) =>
+        isEdit ? prev.map((c) => (c.id === payload.id ? payload : c)) : [...prev, payload]
+      )
+    }
   }
-  const clearTarget = () => setTargetIncome(null)
+  const confirmDeleteCategory = async (id) => {
+    try {
+      await deleteCategoryBudget(id)
+    } catch (e) {
+      toast.error(e.message)
+    }
+    setCategories((prev) => prev.filter((c) => c.id !== id))
+  }
 
   const saveMonthEnd = () => {
     if (!targetIncome) return
@@ -303,7 +483,7 @@ export function BudgetPage() {
       month: now.toLocaleDateString('id-ID', { month: 'long' }),
       year: now.getFullYear(),
       target: targetIncome,
-      spent: spendingEstimate,
+      spent,
       createdAt: now.toISOString(),
     }
     const enriched = { ...snapshot, ...analyzeBudget(snapshot) }
@@ -326,32 +506,22 @@ export function BudgetPage() {
           <h1 className="text-2xl font-bold tracking-tight">Budgeting</h1>
           <p className="text-sm text-muted-foreground">
             {targetIncome
-              ? `Monthly target ${formatRp(targetIncome)} — allocate 50/30/20.`
-              : 'No monthly target yet. Set one to start budgeting.'}
+              ? `Monthly income ${formatRp(targetIncome)} — allocate across your custom categories.`
+              : 'No income recorded this month yet.'}
           </p>
         </div>
-        {!targetIncome && (
-          <Button onClick={openSet}>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button onClick={openAddCategory}>
             <Plus className="size-4" />
-            Set Monthly Target
+            Add Category
           </Button>
-        )}
-        {targetIncome && (
-          <div className="flex items-center gap-2">
+          {targetIncome && (
             <Button variant="outline" size="sm" onClick={saveMonthEnd}>
               <Save className="size-4" />
               Save End of Month
             </Button>
-            <Button variant="outline" size="sm" onClick={clearTarget}>
-              <Trash2 className="size-4" />
-              Reset Target
-            </Button>
-            <Button onClick={openEdit}>
-              <Edit className="size-4" />
-              Edit Target
-            </Button>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       {!targetIncome && (
@@ -359,19 +529,16 @@ export function BudgetPage() {
           <div className="rounded-full bg-accent p-4">
             <PiggyBank className="size-8 text-muted-foreground" />
           </div>
-          <CardTitle>No monthly target set</CardTitle>
+          <CardTitle>No income recorded this month</CardTitle>
           <CardDescription>
-            Set your monthly income to automatically calculate the needs, wants, and
-            investment split (50/30/20).
+            Add an income transaction (type income, category income) to start budgeting from your real income.
           </CardDescription>
-          <Button onClick={openSet}>
-            <Plus className="size-4" />
-            Set Monthly Target
-          </Button>
         </Card>
       )}
 
-      {targetIncome && <BudgetBuckets income={targetIncome} />}
+      {targetIncome && <BudgetBuckets income={targetIncome} spent={spent} categories={categories} onEdit={openEditCategory} onDelete={setDeleteCategory} />}
+
+      <BudgetCategoriesTable income={targetIncome} categories={categories} onEdit={openEditCategory} onDelete={setDeleteCategory} />
 
       {previousMonth && prevEnriched ? (
         <Card>
@@ -461,12 +628,20 @@ export function BudgetPage() {
         </CardContent>
       </Card>
 
-      <SetBudgetDialog
-        open={dialogOpen}
-        onOpenChange={setDialogOpen}
-        initialValue={editValue}
-        mode={editValue ? 'edit' : 'set'}
-        onSubmit={submit}
+      <BudgetCategoryDialog
+        key={categoryDialogOpen ? editingCategory?.id ?? 'add' : 'closed'}
+        open={categoryDialogOpen}
+        onOpenChange={setCategoryDialogOpen}
+        initial={editingCategory}
+        categories={categories}
+        onSubmit={submitCategory}
+      />
+
+      <DeleteBudgetCategoryDialog
+        category={deleteCategory}
+        open={Boolean(deleteCategory)}
+        onOpenChange={(open) => !open && setDeleteCategory(null)}
+        onConfirm={confirmDeleteCategory}
       />
     </div>
   )
