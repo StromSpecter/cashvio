@@ -86,7 +86,8 @@ const DatePicker = forwardRef(
         setSelectedDate(d)
         setShowCalendar(false)
         if (onChange) {
-          onChange(d.toISOString().split('T')[0])
+          const fmt = (n) => String(n).padStart(2, '0')
+          onChange(`${d.getFullYear()}-${fmt(d.getMonth() + 1)}-${fmt(d.getDate())}`)
         }
       },
       [onChange]
