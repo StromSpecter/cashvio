@@ -50,6 +50,27 @@ function DropdownTrigger({ asChild, children, ...props }) {
 }
 DropdownTrigger.displayName = 'DropdownTrigger'
 
+function containingBlockOffset(from) {
+  let el = from
+  while (el && el !== document.documentElement) {
+    const cs = getComputedStyle(el)
+    const isBox =
+      cs.transform !== 'none' ||
+      cs.perspective !== 'none' ||
+      cs.filter !== 'none' ||
+      cs.backdropFilter !== 'none' ||
+      cs.willChange === 'transform' ||
+      cs.contain === 'paint' ||
+      cs.contain === 'layout paint'
+    if (isBox) {
+      const r = el.getBoundingClientRect()
+      return { left: r.left, top: r.top }
+    }
+    el = el.parentElement
+  }
+  return { left: 0, top: 0 }
+}
+
 const DropdownContent = forwardRef(({ className, align = 'start', children, ...props }, ref) => {
   const { open, setOpen, triggerRef } = useContext(DropdownContext)
   const contentRef = useRef(null)
@@ -66,9 +87,19 @@ const DropdownContent = forwardRef(({ className, align = 'start', children, ...p
       const menuW = menu ? menu.offsetWidth : 128
       const spaceBelow = window.innerHeight - rect.bottom
       const openUp = spaceBelow < menuH + 8 && rect.top > menuH
-      const top = openUp ? rect.top - menuH - 4 : rect.bottom + 4
-      const left = align === 'end' ? rect.right - menuW : rect.left
-      setPos({ top, left })
+      const topY = openUp ? rect.top - menuH - 4 : rect.bottom + 4
+      const leftX = align === 'end' ? rect.right - menuW : rect.left
+
+      // backdrop-filter on a sticky header traps `fixed` children in a
+      // containing block, offset from the viewport; compensate.
+      const offset = containingBlockOffset(el)
+      const x = leftX - offset.left
+      const y = topY - offset.top
+
+      setPos({
+        top: Math.min(Math.max(8, y), window.innerHeight - menuH - 8),
+        left: Math.min(Math.max(8, x), window.innerWidth - menuW - 8),
+      })
     }
     update()
     window.addEventListener('resize', update)
