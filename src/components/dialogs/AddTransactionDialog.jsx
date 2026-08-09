@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Plus, ArrowDownToLine, ArrowLeftRight, Store, ShoppingCart, Briefcase, Repeat, Globe } from 'lucide-react'
+import { Plus, ShoppingCart, Briefcase, Laptop, Gift, BadgeDollarSign, UtensilsCrossed, Car, Home, Clapperboard, HeartPulse, GraduationCap } from 'lucide-react'
 import { Button } from '../ui/button'
 import { Input } from '../ui/input'
 import { Label } from '../ui/label'
@@ -21,24 +21,30 @@ import {
 import { DatePicker } from '../ui/datepicker'
 
 const categoryOptions = [
-  { value: 'income', label: 'Income', icon: ArrowDownToLine },
   { value: 'salary', label: 'Salary', icon: Briefcase },
+  { value: 'freelance', label: 'Freelance', icon: Laptop },
+  { value: 'gift', label: 'Gift', icon: Gift },
+  { value: 'bonus', label: 'Bonus', icon: BadgeDollarSign },
+  { value: 'food', label: 'Food & Drinks', icon: UtensilsCrossed },
+  { value: 'transportation', label: 'Transportation', icon: Car },
+  { value: 'housing', label: 'Housing', icon: Home },
   { value: 'shopping', label: 'Shopping', icon: ShoppingCart },
-  { value: 'groceries', label: 'Groceries', icon: Store },
-  { value: 'subscription', label: 'Subscription', icon: Repeat },
-  { value: 'travel', label: 'Travel', icon: Globe },
-  { value: 'transfer', label: 'Transfer', icon: ArrowLeftRight },
+  { value: 'entertainment', label: 'Entertainment', icon: Clapperboard },
+  { value: 'health', label: 'Health', icon: HeartPulse },
+  { value: 'education', label: 'Education', icon: GraduationCap },
 ]
 
 const statusOptions = ['completed', 'pending', 'failed']
 
 const formatRp = (n) => `Rp${Number(n || 0).toLocaleString('id-ID')}`
 
-function AccountOption({ label, balance }) {
+function AccountOption({ account }) {
   return (
-    <div className="flex w-full flex-col leading-tight">
-      <span className="text-sm font-medium">{label}</span>
-      <span className="text-xs text-muted-foreground">Saldo {formatRp(balance)}</span>
+    <div className="flex w-full items-center justify-between gap-2">
+      <span className="truncate text-sm font-medium">
+        {account.label}
+        <span className="text-xs font-normal text-muted-foreground"> · {formatRp(account.balance)}</span>
+      </span>
     </div>
   )
 }
@@ -153,7 +159,7 @@ export function AddTransactionDialog({ open, onOpenChange, onSubmit, wallets = [
                 </SelectTrigger>
                 <SelectContent>
                   {accounts.map((a) => (
-                    <SelectItem key={a.key} value={a.key}>
+                    <SelectItem key={a.key} value={a.key} disabled={type === 'expense' && a.balance <= 0}>
                       <AccountOption account={a} />
                     </SelectItem>
                   ))}

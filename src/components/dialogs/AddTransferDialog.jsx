@@ -40,7 +40,7 @@ export function AddTransferDialog({ open, onOpenChange, onSubmit, wallets = [], 
     }))
     const cs = cards.map((c) => ({
       key: `card:${c.id}`,
-      label: c.name,
+      label: c.bank || c.name,
       masked: c.masked || '',
       balance: c.balance_idr,
     }))
@@ -126,10 +126,12 @@ export function AddTransferDialog({ open, onOpenChange, onSubmit, wallets = [], 
               </SelectTrigger>
               <SelectContent>
                 {accounts.map((a) => (
-                  <SelectItem key={a.key} value={a.key}>
-                    <div className="flex w-full items-center justify-between">
-                      <span>{a.label}</span>
-                      <span className="text-xs text-muted-foreground">{formatRp(a.balance)}</span>
+                  <SelectItem key={a.key} value={a.key} disabled={a.balance <= 0}>
+                    <div className="flex w-full items-center justify-between gap-2">
+                      <span className="truncate">
+                        {a.label}
+                        <span className="text-xs text-muted-foreground"> · {formatRp(a.balance)}</span>
+                      </span>
                     </div>
                   </SelectItem>
                 ))}
@@ -151,9 +153,11 @@ export function AddTransferDialog({ open, onOpenChange, onSubmit, wallets = [], 
               <SelectContent>
                 {accounts.map((a) => (
                   <SelectItem key={a.key} value={a.key}>
-                    <div className="flex w-full items-center justify-between">
-                      <span>{a.label}</span>
-                      <span className="text-xs text-muted-foreground">{formatRp(a.balance)}</span>
+                    <div className="flex w-full items-center justify-between gap-2">
+                      <span className="truncate">
+                        {a.label}
+                        <span className="text-xs text-muted-foreground"> · {formatRp(a.balance)}</span>
+                      </span>
                     </div>
                   </SelectItem>
                 ))}

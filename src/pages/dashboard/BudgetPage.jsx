@@ -531,7 +531,7 @@ export function BudgetPage() {
           </div>
           <CardTitle>No income recorded this month</CardTitle>
           <CardDescription>
-            Add an income transaction (type income, category income) to start budgeting from your real income.
+            Add an income transaction (type income) to start budgeting from your real income.
           </CardDescription>
         </Card>
       )}

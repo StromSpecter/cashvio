@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, useCallback, useRef } from 'react'
-import { Search, Download, Plus, ArrowDownToLine, ArrowLeftRight, Store, ShoppingCart, Briefcase, Repeat, Globe, MoreHorizontal, Pencil, Trash2 } from 'lucide-react'
+import { Search, Download, Plus, ArrowDownToLine, ArrowLeftRight, Store, ShoppingCart, Briefcase, Repeat, Globe, Laptop, Gift, BadgeDollarSign, UtensilsCrossed, Car, Home, Clapperboard, HeartPulse, GraduationCap, MoreHorizontal, Pencil, Trash2 } from 'lucide-react'
 import { Button } from '../../components/ui/button'
 import { Badge } from '../../components/ui/badge'
 import { Input } from '../../components/ui/input'
@@ -34,13 +34,25 @@ import {
 import { toast } from '../../lib/toast.js'
 
 const categories = {
-  income: { label: 'Income', icon: ArrowDownToLine, tone: 'text-emerald-600' },
-  shopping: { label: 'Shopping', icon: ShoppingCart, tone: 'text-blue-600' },
-  groceries: { label: 'Groceries', icon: Store, tone: 'text-amber-600' },
   salary: { label: 'Salary', icon: Briefcase, tone: 'text-emerald-600' },
+  freelance: { label: 'Freelance', icon: Laptop, tone: 'text-sky-600' },
+  gift: { label: 'Gift', icon: Gift, tone: 'text-pink-600' },
+  bonus: { label: 'Bonus', icon: BadgeDollarSign, tone: 'text-amber-600' },
+  food: { label: 'Food & Drinks', icon: UtensilsCrossed, tone: 'text-orange-600' },
+  transportation: { label: 'Transportation', icon: Car, tone: 'text-cyan-600' },
+  housing: { label: 'Housing', icon: Home, tone: 'text-violet-600' },
+  shopping: { label: 'Shopping', icon: ShoppingCart, tone: 'text-blue-600' },
+  entertainment: { label: 'Entertainment', icon: Clapperboard, tone: 'text-red-600' },
+  health: { label: 'Health', icon: HeartPulse, tone: 'text-emerald-600' },
+  education: { label: 'Education', icon: GraduationCap, tone: 'text-indigo-600' },
+}
+
+const categoryLegacy = {
+  income: { label: 'Income', icon: ArrowDownToLine, tone: 'text-emerald-600' },
+  transfer: { label: 'Transfer', icon: ArrowLeftRight, tone: 'text-zinc-600' },
+  groceries: { label: 'Groceries', icon: Store, tone: 'text-amber-600' },
   subscription: { label: 'Subscription', icon: Repeat, tone: 'text-purple-600' },
   travel: { label: 'Travel', icon: Globe, tone: 'text-cyan-600' },
-  transfer: { label: 'Transfer', icon: ArrowLeftRight, tone: 'text-zinc-600' },
 }
 
 const statusVariant = {
@@ -214,7 +226,7 @@ export function TransactionsPage() {
       header: 'Category',
       sortable: true,
       render: (value) => {
-        const cat = categories[value]
+        const cat = categories[value] || categoryLegacy[value]
         const Icon = cat.icon
         return (
           <div className="flex items-center gap-2">
@@ -304,12 +316,16 @@ export function TransactionsPage() {
               <SelectContent>
                 <SelectItem value="all">All categories</SelectItem>
                 <SelectItem value="salary">Salary</SelectItem>
-                <SelectItem value="income">Income</SelectItem>
+                <SelectItem value="freelance">Freelance</SelectItem>
+                <SelectItem value="gift">Gift</SelectItem>
+                <SelectItem value="bonus">Bonus</SelectItem>
+                <SelectItem value="food">Food & Drinks</SelectItem>
+                <SelectItem value="transportation">Transportation</SelectItem>
+                <SelectItem value="housing">Housing</SelectItem>
                 <SelectItem value="shopping">Shopping</SelectItem>
-                <SelectItem value="groceries">Groceries</SelectItem>
-                <SelectItem value="subscription">Subscriptions</SelectItem>
-                <SelectItem value="travel">Travel</SelectItem>
-                <SelectItem value="transfer">Transfers</SelectItem>
+                <SelectItem value="entertainment">Entertainment</SelectItem>
+                <SelectItem value="health">Health</SelectItem>
+                <SelectItem value="education">Education</SelectItem>
               </SelectContent>
             </Select>
             <Select value={status} onValueChange={setStatus}>
