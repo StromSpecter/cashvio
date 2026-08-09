@@ -32,6 +32,17 @@ const categoryOptions = [
 
 const statusOptions = ['completed', 'pending', 'failed']
 
+const formatRp = (n) => `Rp${Number(n || 0).toLocaleString('id-ID')}`
+
+function AccountOption({ label, balance }) {
+  return (
+    <div className="flex w-full flex-col leading-tight">
+      <span className="text-sm font-medium">{label}</span>
+      <span className="text-xs text-muted-foreground">Saldo {formatRp(balance)}</span>
+    </div>
+  )
+}
+
 export function AddTransactionDialog({ open, onOpenChange, onSubmit, wallets = [], cards = [] }) {
   const [name, setName] = useState('')
   const [amount, setAmount] = useState('')
@@ -43,8 +54,8 @@ export function AddTransactionDialog({ open, onOpenChange, onSubmit, wallets = [
   const [error, setError] = useState('')
 
   const accounts = [
-    ...wallets.map((w) => ({ key: `wallet:${w.id}`, label: w.name, masked: w.masked })),
-    ...cards.map((c) => ({ key: `card:${c.id}`, label: c.name, masked: c.masked })),
+    ...wallets.map((w) => ({ key: `wallet:${w.id}`, label: w.name, balance: w.balance })),
+    ...cards.map((c) => ({ key: `card:${c.id}`, label: c.name, balance: c.balance })),
   ]
 
   const reset = () => {
@@ -143,12 +154,7 @@ export function AddTransactionDialog({ open, onOpenChange, onSubmit, wallets = [
                 <SelectContent>
                   {accounts.map((a) => (
                     <SelectItem key={a.key} value={a.key}>
-                      <div className="flex items-center justify-between w-full">
-                        <span>{a.label}</span>
-                        <span className="text-xs text-muted-foreground">
-                          {a.masked}
-                        </span>
-                      </div>
+                      <AccountOption account={a} />
                     </SelectItem>
                   ))}
                 </SelectContent>

@@ -96,10 +96,10 @@ export function TransactionsPage() {
 
   const applyAll = useCallback(({ wallets, cards, transactions }) => {
     setWallets(
-      wallets.map((w) => ({ id: w.id, name: w.name, masked: w.masked || '', type: 'wallet' }))
+      wallets.map((w) => ({ id: w.id, name: w.name, masked: w.masked || '', type: 'wallet', balance: w.balance_idr }))
     )
     setCards(
-      cards.map((c) => ({ id: c.id, name: c.bank, masked: c.masked || '', type: 'card' }))
+      cards.map((c) => ({ id: c.id, name: c.bank, masked: c.masked || '', type: 'card', balance: c.balance_idr }))
     )
     setTransactions(transactions)
   }, [])
