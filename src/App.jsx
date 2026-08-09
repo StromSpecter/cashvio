@@ -8,6 +8,7 @@ import { DashboardPage } from "./pages/dashboard/DashboardPage"
 import { WalletsPage } from "./pages/dashboard/WalletsPage"
 import { CardsPage } from "./pages/dashboard/CardsPage"
 import { TransactionsPage } from "./pages/dashboard/TransactionsPage"
+import { TransfersPage } from "./pages/dashboard/TransfersPage"
 import { RequireAuth, GuestRoute } from "./lib/auth.jsx"
 
 function App() {
@@ -45,6 +46,7 @@ function App() {
           <Route path="/dashboard/wallets" element={<WalletsPage />} />
           <Route path="/dashboard/cards" element={<CardsPage />} />
           <Route path="/dashboard/transactions" element={<TransactionsPage />} />
+          <Route path="/dashboard/transfers" element={<TransfersPage />} />
         </Route>
 
         <Route path="*" element={<Navigate to="/signin" replace />} />

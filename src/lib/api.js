@@ -10,6 +10,7 @@ export const API = {
   CARD: '/api/v1/cards',
   WALLET: '/api/v1/wallets',
   TRANSACTION: '/api/v1/transactions',
+  TRANSFER: '/api/v1/transfers',
   BUDGET: '/api/v1/budgets',
   CATEGORY_BUDGET: '/api/v1/category-budgets',
   HEALTH: '/health',
@@ -36,6 +37,10 @@ export const ENDPOINTS = {
   // Transactions
   TRANSACTIONS: API.TRANSACTION,
   TRANSACTION: (id) => `${API.TRANSACTION}/${id}`,
+
+  // Transfers
+  TRANSFERS: API.TRANSFER,
+  TRANSFER: (id) => `${API.TRANSFER}/${id}`,
 
   // Budgets
   BUDGET_OVERVIEW: `${API.BUDGET}/overview`,
@@ -118,6 +123,12 @@ export const getTransaction = (id) => api.get(ENDPOINTS.TRANSACTION(id))
 export const createTransaction = (payload) => api.post(ENDPOINTS.TRANSACTIONS, payload)
 export const updateTransaction = (id, payload) => api.put(ENDPOINTS.TRANSACTION(id), payload)
 export const deleteTransaction = (id) => api.delete(ENDPOINTS.TRANSACTION(id))
+
+// --- Transfers ---
+export const getTransfers = (params) => api.get(ENDPOINTS.TRANSFERS, { params })
+export const getTransfer = (id) => api.get(ENDPOINTS.TRANSFER(id))
+export const createTransfer = (payload) => api.post(ENDPOINTS.TRANSFERS, payload)
+export const deleteTransfer = (id) => api.delete(ENDPOINTS.TRANSFER(id))
 
 // --- Budget overview ---
 export const getBudgetOverview = () => api.get(ENDPOINTS.BUDGET_OVERVIEW)
