@@ -25,6 +25,7 @@ function LineBase({
   data = [],
   config,
   height = 260,
+  fit = false,
   showTooltip = true,
   showLegend = false,
   showDots = true,
@@ -34,12 +35,16 @@ function LineBase({
   className,
   ...props
 }) {
-  const { ref, width } = useChartSize()
+  const { ref, width, height: measuredHeight } = useChartSize()
   const ctx = useChartContext()
   const gradientId = useId()
   const seriesConfig = config ?? ctx.config
   const series = Object.entries(seriesConfig)
   const keys = series.map(([key]) => key)
+
+  const chartHeight = fit
+    ? Math.max(200, (measuredHeight || 0) - (showLegend ? 36 : 0))
+    : height
 
   const maxValue = niceMax(
     Math.max(
@@ -48,7 +53,7 @@ function LineBase({
     )
   )
 
-  const scale = useCartesianScale({ width, height, data, maxValue })
+  const scale = useCartesianScale({ width, height: chartHeight, data, maxValue })
   const pathFn = curve === 'straight' ? linePath : smoothPath
 
   const points = keys.map((key) =>
@@ -96,7 +101,7 @@ function LineBase({
   }
 
   return (
-    <div ref={ref} className={cn('w-full text-foreground', className)} {...props}>
+    <div ref={ref} className={cn('w-full text-foreground', fit && 'h-full', className)} {...props}>
       {showLegend && (
         <ChartLegend
           className="mb-2"
@@ -106,7 +111,7 @@ function LineBase({
           }))}
         />
       )}
-      <svg width={width} height={height} className="block overflow-visible">
+      <svg width={width} height={chartHeight} className="block overflow-visible">
         {area && (
           <defs>
             {series.map(([key], s) => (
@@ -133,7 +138,7 @@ function LineBase({
           </defs>
         )}
         <CartesianAxes
-          height={height}
+          height={chartHeight}
           maxValue={maxValue}
           xLabels={xLabels}
           formatValue={ctx.formatValue}

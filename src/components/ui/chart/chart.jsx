@@ -121,16 +121,20 @@ export function useChartContext() {
 export function useChartSize() {
   const ref = useRef(null)
   const [width, setWidth] = useState(0)
+  const [height, setHeight] = useState(0)
   useEffect(() => {
     const el = ref.current
     if (!el) return
     const observer = new ResizeObserver((entries) => {
-      for (const entry of entries) setWidth(entry.contentRect.width)
+      for (const entry of entries) {
+        setWidth(entry.contentRect.width)
+        setHeight(entry.contentRect.height)
+      }
     })
     observer.observe(el)
     return () => observer.disconnect()
   }, [])
-  return { ref, width }
+  return { ref, width, height }
 }
 
 export function useCartesianScale({ width, height, data, maxValue, margin = CHART_MARGIN }) {
@@ -217,7 +221,7 @@ export function CartesianAxes({
 }
 
 const ChartContainer = forwardRef(({ config = {}, formatValue, className, children, ...props }, ref) => {
-  const { ref: sizeRef, width } = useChartSize()
+  const { ref: sizeRef, width, height } = useChartSize()
   const [hover, setHover] = useState(null)
 
   const styleVars = useMemo(() => {
@@ -231,12 +235,13 @@ const ChartContainer = forwardRef(({ config = {}, formatValue, className, childr
   const value = useMemo(
     () => ({
       width,
+      height,
       config,
       formatValue: formatValue ?? ((v) => String(v)),
       showTooltip: setHover,
       hideTooltip: () => setHover(null),
     }),
-    [width, config, formatValue]
+    [width, height, config, formatValue]
   )
 
   return (
