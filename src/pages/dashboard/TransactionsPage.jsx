@@ -295,7 +295,7 @@ export function TransactionsPage() {
       </div>
 
       <Tabs defaultValue="all">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-4 sm:flex-row flex-wrap sm:items-center sm:justify-between">
           <TabsList>
             <TabsTrigger value="all">All</TabsTrigger>
             <TabsTrigger value="income">Income</TabsTrigger>
