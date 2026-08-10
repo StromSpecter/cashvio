@@ -30,6 +30,7 @@ import {
   deleteTransaction,
   getWallets,
   getCards,
+  getCash,
 } from '../../lib/api'
 import { toast } from '../../lib/toast.js'
 
@@ -88,6 +89,7 @@ export function TransactionsPage() {
   const [transactions, setTransactions] = useState([])
   const [wallets, setWallets] = useState([])
   const [cards, setCards] = useState([])
+  const [cash, setCash] = useState(null)
   const [query, setQuery] = useState('')
   const [category, setCategory] = useState('all')
   const [status, setStatus] = useState('all')
@@ -98,15 +100,16 @@ export function TransactionsPage() {
   const fetchedRef = useRef(false)
 
   const fetchAll = useCallback(async () => {
-    const [wRes, cRes, tRes] = await Promise.all([
+    const [wRes, cRes, tRes, cashRes] = await Promise.all([
       getWallets({ limit: 100 }),
       getCards({ limit: 100 }),
       getTransactions({ limit: 100 }),
+      getCash(),
     ])
-    return { wallets: wRes.data, cards: cRes.data, transactions: tRes.data }
+    return { wallets: wRes.data, cards: cRes.data, transactions: tRes.data, cash: cashRes.data }
   }, [])
 
-  const applyAll = useCallback(({ wallets, cards, transactions }) => {
+  const applyAll = useCallback(({ wallets, cards, transactions, cash }) => {
     setWallets(
       wallets.map((w) => ({ id: w.id, name: w.name, masked: w.masked || '', type: 'wallet', balance: w.balance_idr }))
     )
@@ -114,6 +117,7 @@ export function TransactionsPage() {
       cards.map((c) => ({ id: c.id, name: c.bank, masked: c.masked || '', type: 'card', balance: c.balance_idr }))
     )
     setTransactions(transactions)
+    setCash(cash)
   }, [])
 
   const refresh = useCallback(() => {
@@ -134,11 +138,11 @@ export function TransactionsPage() {
 
   const accountMap = useMemo(() => {
     const map = {}
-    ;[...wallets, ...cards].forEach((a) => {
+    ;[...wallets, ...cards, ...(cash ? [{ id: cash.id, name: 'Cash', type: 'cash', balance: cash.balance_idr }] : [])].forEach((a) => {
       map[a.id] = a
     })
     return map
-  }, [wallets, cards])
+  }, [wallets, cards, cash])
 
   const filtered = transactions.filter((tx) => {
     const matchesQuery = (tx.name || '').toLowerCase().includes(query.toLowerCase())
@@ -238,7 +242,7 @@ export function TransactionsPage() {
     },
     {
       key: 'account',
-      header: 'Wallet/Card',
+      header: 'Account',
       sortable: false,
       render: (_, row) => accountMap[row.account_id]?.name || '—',
     },
@@ -353,8 +357,8 @@ export function TransactionsPage() {
         </TabsContent>
       </Tabs>
 
-      <AddTransactionDialog open={addOpen} onOpenChange={setAddOpen} onSubmit={handleAdd} wallets={wallets} cards={cards} />
-      <EditTransactionDialog transaction={selectedTx} open={editOpen} onOpenChange={setEditOpen} onSubmit={handleEdit} wallets={wallets} cards={cards} />
+      <AddTransactionDialog open={addOpen} onOpenChange={setAddOpen} onSubmit={handleAdd} wallets={wallets} cards={cards} cash={cash} />
+      <EditTransactionDialog transaction={selectedTx} open={editOpen} onOpenChange={setEditOpen} onSubmit={handleEdit} wallets={wallets} cards={cards} cash={cash} />
       <DeleteTransactionDialog transaction={selectedTx} open={deleteOpen} onOpenChange={setDeleteOpen} onConfirm={handleDelete} />
     </div>
   )

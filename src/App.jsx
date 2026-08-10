@@ -10,6 +10,7 @@ import { CardsPage } from "./pages/dashboard/CardsPage"
 import { TransactionsPage } from "./pages/dashboard/TransactionsPage"
 import { TransfersPage } from "./pages/dashboard/TransfersPage"
 import { RequireAuth, GuestRoute } from "./lib/auth.jsx"
+import { CashPage } from "./pages/dashboard/CashPage.jsx"
 
 function App() {
   return (
@@ -43,6 +44,7 @@ function App() {
         >
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/dashboard/budget" element={<BudgetPage />} />
+          <Route path="/dashboard/cash" element={<CashPage />} />
           <Route path="/dashboard/wallets" element={<WalletsPage />} />
           <Route path="/dashboard/cards" element={<CardsPage />} />
           <Route path="/dashboard/transactions" element={<TransactionsPage />} />

@@ -12,6 +12,7 @@ import {
   Settings,
   CircleHelp,
   LogOut,
+  CircleDollarSign,
 } from "lucide-react";
 
 const navSections = [
@@ -25,6 +26,7 @@ const navSections = [
         icon: ArrowDownToLine,
       },
       { to: "/dashboard/transfers", label: "Transfers", icon: ArrowLeftRight },
+      { to: "/dashboard/cash", label: "Cash", icon: CircleDollarSign },
       { to: "/dashboard/wallets", label: "Wallets", icon: Wallet },
       { to: "/dashboard/cards", label: "Cards", icon: CreditCard },
     ],

@@ -49,7 +49,7 @@ function AccountOption({ account }) {
   )
 }
 
-export function EditTransactionDialog({ transaction, open, onOpenChange, onSubmit, wallets = [], cards = [] }) {
+export function EditTransactionDialog({ transaction, open, onOpenChange, onSubmit, wallets = [], cards = [], cash }) {
   const [name, setName] = useState('')
   const [amount, setAmount] = useState('')
   const [type, setType] = useState('expense')
@@ -75,6 +75,7 @@ export function EditTransactionDialog({ transaction, open, onOpenChange, onSubmi
   const accounts = [
     ...wallets.map((w) => ({ key: `wallet:${w.id}`, label: w.name, balance: w.balance })),
     ...cards.map((c) => ({ key: `card:${c.id}`, label: c.name, balance: c.balance })),
+    ...(cash ? [{ key: `cash:${cash.id}`, label: 'Cash', balance: cash.balance_idr }] : []),
   ]
 
   const handleSubmit = (e) => {
@@ -89,7 +90,7 @@ export function EditTransactionDialog({ transaction, open, onOpenChange, onSubmi
       return
     }
     if (!account) {
-      setError('Please select a wallet or card')
+      setError('Please select a wallet, card, or cash')
       return
     }
     setError('')
@@ -154,11 +155,11 @@ export function EditTransactionDialog({ transaction, open, onOpenChange, onSubmi
           {accounts.length > 0 ? (
             <div className="space-y-2">
               <Label htmlFor="edit-tx-wallet">
-                {type === 'income' ? 'Destination' : 'Source'} wallet/card
+                {type === 'income' ? 'Destination' : 'Source'} wallet/card/cash
               </Label>
               <Select value={account} onValueChange={setAccount}>
                 <SelectTrigger id="edit-tx-wallet">
-                  <SelectValue placeholder="Select wallet or card" />
+                  <SelectValue placeholder="Select wallet, card, or cash" />
                 </SelectTrigger>
                 <SelectContent>
                   {accounts.map((a) => (
@@ -171,7 +172,7 @@ export function EditTransactionDialog({ transaction, open, onOpenChange, onSubmi
             </div>
           ) : (
             <p className="rounded-md border border-border bg-muted/50 p-3 text-sm text-muted-foreground">
-              No wallets or cards yet. Add one before recording a transaction.
+              No accounts yet. Add a wallet, card, or cash before recording a transaction.
             </p>
           )}
           <div className="space-y-2">

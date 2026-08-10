@@ -11,6 +11,7 @@ export const API = {
   WALLET: '/api/v1/wallets',
   TRANSACTION: '/api/v1/transactions',
   TRANSFER: '/api/v1/transfers',
+  CASH: '/api/v1/cash',
   BUDGET: '/api/v1/budgets',
   CATEGORY_BUDGET: '/api/v1/category-budgets',
   HEALTH: '/health',
@@ -41,6 +42,11 @@ export const ENDPOINTS = {
   // Transfers
   TRANSFERS: API.TRANSFER,
   TRANSFER: (id) => `${API.TRANSFER}/${id}`,
+
+  // Cash
+  CASH: API.CASH,
+  CASH_WITHDRAWALS: `${API.CASH}/withdrawals`,
+  CASH_WITHDRAWAL: (id) => `${API.CASH}/withdrawals/${id}`,
 
   // Budgets
   BUDGET_OVERVIEW: `${API.BUDGET}/overview`,
@@ -129,6 +135,13 @@ export const getTransfers = (params) => api.get(ENDPOINTS.TRANSFERS, { params })
 export const getTransfer = (id) => api.get(ENDPOINTS.TRANSFER(id))
 export const createTransfer = (payload) => api.post(ENDPOINTS.TRANSFERS, payload)
 export const deleteTransfer = (id) => api.delete(ENDPOINTS.TRANSFER(id))
+
+// --- Cash ---
+export const getCash = () => api.get(ENDPOINTS.CASH)
+export const getCashWithdrawals = (params) => api.get(ENDPOINTS.CASH_WITHDRAWALS, { params })
+export const getCashWithdrawal = (id) => api.get(ENDPOINTS.CASH_WITHDRAWAL(id))
+export const createCashWithdrawal = (payload) => api.post(ENDPOINTS.CASH_WITHDRAWALS, payload)
+export const deleteCashWithdrawal = (id) => api.delete(ENDPOINTS.CASH_WITHDRAWAL(id))
 
 // --- Budget overview ---
 export const getBudgetOverview = () => api.get(ENDPOINTS.BUDGET_OVERVIEW)
