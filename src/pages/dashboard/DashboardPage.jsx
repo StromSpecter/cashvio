@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useMemo, useState, useCallback, useRef } from 'react'
 import {
   Wallet,
   ArrowDownToLine,
@@ -14,6 +14,7 @@ import {
   PiggyBank,
   CreditCard,
   Smartphone,
+  Banknote,
   UtensilsCrossed,
   Car,
   ShoppingBag,
@@ -39,32 +40,66 @@ import { AreaChart } from '../../components/ui/chart'
 import { BarChart } from '../../components/ui/chart'
 import { PieChart } from '../../components/ui/chart'
 import { RadialChart } from '../../components/ui/chart'
+import { getDashboardOverview } from '../../lib/api'
+import { useAuth } from '../../lib/auth-context.js'
+import { toast } from '../../lib/toast.js'
 
 const formatRp = (value) => `Rp${Number(value || 0).toLocaleString('id-ID')}`
 
-const stats = [
-  { label: 'Total Balance', value: 'Rp24.562.800', change: '+12,4%', icon: Wallet, up: true, hint: 'All wallets & cards' },
-  { label: 'Income', value: 'Rp8.420.000', change: '+4,1%', icon: ArrowDownToLine, up: true, hint: 'vs last month' },
-  { label: 'Expenses', value: 'Rp3.215.600', change: '-2,3%', icon: ArrowUpFromLine, up: false, hint: 'vs last month' },
-  { label: 'Savings Rate', value: '61,8%', change: '+3,4%', icon: PiggyBank, up: true, hint: 'Rp5.204.400 kept' },
+const signPct = (value) => `${value >= 0 ? '+' : ''}${Number(value || 0).toLocaleString('id-ID', { maximumFractionDigits: 1 })}%`
+
+const categoryLabels = {
+  income: 'Income',
+  transfer: 'Transfer',
+  salary: 'Salary',
+  freelance: 'Freelance',
+  gift: 'Gift',
+  bonus: 'Bonus',
+  food: 'Food & Drinks',
+  transportation: 'Transportation',
+  housing: 'Housing',
+  shopping: 'Shopping',
+  entertainment: 'Entertainment',
+  health: 'Health',
+  education: 'Education',
+  groceries: 'Groceries',
+  subscription: 'Subscription',
+  travel: 'Travel',
+}
+
+const categoryMeta = {
+  food: { icon: UtensilsCrossed, tone: 'text-emerald-600' },
+  transportation: { icon: Car, tone: 'text-cyan-600' },
+  transport: { icon: Car, tone: 'text-cyan-600' },
+  shopping: { icon: ShoppingBag, tone: 'text-blue-600' },
+  entertainment: { icon: Clapperboard, tone: 'text-red-600' },
+  salary: { icon: Landmark, tone: 'text-emerald-600' },
+}
+
+const cardGradients = [
+  'from-zinc-900 to-zinc-700',
+  'from-emerald-600 to-teal-500',
+  'from-blue-600 to-cyan-500',
+  'from-orange-600 to-amber-500',
 ]
 
-const balanceRanges = {
-  '7d': {
-    labels: ['Jul 29', 'Jul 30', 'Jul 31', 'Agu 1', 'Agu 2', 'Agu 3', 'Agu 4'],
-    income: [120, 80, 140, 95, 160, 110, 135],
-    expense: [45, 60, 38, 72, 55, 48, 62],
-  },
-  '30d': {
-    labels: ['Jul 6', 'Jul 10', 'Jul 14', 'Jul 18', 'Jul 22', 'Jul 26', 'Jul 30', 'Agu 3'],
-    income: [110, 145, 95, 170, 130, 150, 120, 165],
-    expense: [50, 65, 80, 45, 70, 90, 55, 75],
-  },
-  '90d': {
-    labels: ['Mei', 'Jun', 'Jul', 'Agu'],
-    income: [320, 410, 385, 450],
-    expense: [180, 240, 210, 195],
-  },
+const spendingPalette = [
+  'var(--color-chart-1)',
+  'var(--color-chart-2)',
+  'var(--color-chart-3)',
+  'var(--color-chart-4)',
+  'var(--color-chart-5)',
+]
+
+const statusVariant = {
+  completed: 'success',
+  pending: 'warning',
+  failed: 'destructive',
+}
+
+const formatDate = (value) => {
+  if (!value) return ''
+  return new Date(value).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
 }
 
 const balanceConfig = {
@@ -72,74 +107,10 @@ const balanceConfig = {
   expense: { label: 'Expenses', color: 'var(--color-destructive)' },
 }
 
-const spending = [
-  { key: 'transport', label: 'Transportation', value: 32, amount: 1029000, color: 'var(--color-chart-3)' },
-  { key: 'food', label: 'Food & Drinks', value: 26, amount: 836100, color: 'var(--color-chart-2)' },
-  { key: 'shopping', label: 'Shopping', value: 18, amount: 578800, color: 'var(--color-chart-1)' },
-  { key: 'entertainment', label: 'Entertainment', value: 14, amount: 450200, color: 'var(--color-chart-4)' },
-  { key: 'other', label: 'Others', value: 10, amount: 279500, color: 'var(--color-chart-5)' },
-]
-
-const spendingConfig = Object.fromEntries(
-  spending.map((s) => [s.key, { label: s.label, color: s.color }])
-)
-
-const cashFlowData = [
-  { label: 'Mei', income: 320, expense: 180 },
-  { label: 'Jun', income: 410, expense: 240 },
-  { label: 'Jul', income: 385, expense: 210 },
-  { label: 'Agu', income: 450, expense: 195 },
-]
-
 const cashFlowConfig = {
   income: { label: 'Income', color: 'var(--color-chart-2)' },
   expense: { label: 'Expenses', color: 'var(--color-destructive)' },
 }
-
-const accounts = [
-  { id: 'acc-1', kind: 'card', name: 'Bank Central Asia', masked: '•••• •••• 4753', balance: 8500000, gradient: 'from-zinc-900 to-zinc-700', icon: CreditCard },
-  { id: 'acc-2', kind: 'wallet', name: 'GoPay', masked: '• 5679', balance: 170000, gradient: 'from-emerald-600 to-teal-500', icon: Smartphone },
-  { id: 'acc-3', kind: 'wallet', name: 'Dana', masked: '• 2411', balance: 895000, gradient: 'from-blue-600 to-cyan-500', icon: Smartphone },
-  { id: 'acc-4', kind: 'wallet', name: 'ShopeePay', masked: '• 8892', balance: 2147800, gradient: 'from-orange-600 to-amber-500', icon: Smartphone },
-]
-
-const categoryMeta = {
-  food: { icon: UtensilsCrossed, tone: 'text-emerald-600' },
-  transport: { icon: Car, tone: 'text-cyan-600' },
-  shopping: { icon: ShoppingBag, tone: 'text-blue-600' },
-  entertainment: { icon: Clapperboard, tone: 'text-red-600' },
-  salary: { icon: Landmark, tone: 'text-emerald-600' },
-}
-
-const insights = [
-  {
-    title: 'Top Spending',
-    label: 'Transportation',
-    value: 'Rp1.029.000',
-    sub: '32% of this month',
-    icon: Car,
-    tone: 'text-cyan-600',
-    bg: 'var(--color-chart-3)',
-  },
-  {
-    title: 'Largest Expense',
-    label: 'Bensin Pertamax',
-    value: 'Rp300.000',
-    sub: 'Aug 10 · BCA',
-    icon: ReceiptText,
-    tone: 'text-orange-600',
-    bg: 'var(--color-chart-4)',
-  },
-  {
-    title: 'Estimated Savings',
-    label: 'This month',
-    value: 'Rp5.204.400',
-    sub: '+4,8% vs July',
-    icon: Sparkles,
-    tone: 'text-emerald-600',
-    bg: 'var(--color-chart-2)',
-  },
-]
 
 const columns = [
   {
@@ -167,7 +138,7 @@ const columns = [
   },
   {
     key: 'wallet',
-    header: 'Wallet/Card',
+    header: 'Account',
     sortable: true,
     render: (value) => <Badge variant="outline" className="font-normal">{value}</Badge>,
   },
@@ -190,16 +161,7 @@ const columns = [
     header: 'Status',
     sortable: true,
     render: (value) => (
-      <Badge
-        variant={
-          value === 'completed'
-            ? 'success'
-            : value === 'failed'
-              ? 'destructive'
-              : 'warning'
-        }
-        className="capitalize"
-      >
+      <Badge variant={statusVariant[value]} className="capitalize">
         {value}
       </Badge>
     ),
@@ -296,15 +258,95 @@ function AccountCard({ account }) {
 }
 
 export function DashboardPage() {
+  const { user } = useAuth()
   const [range, setRange] = useState('30d')
-  const [transactions, setTransactions] = useState([
-    { id: 1, name: 'Gaji Bulan Ini', amount: '+Rp4.200.000', status: 'completed', date: 'Agu 10', wallet: 'BCA', category: 'salary', categoryLabel: 'Salary' },
-    { id: 2, name: 'Bensin Pertamax', amount: '-Rp300.000', status: 'completed', date: 'Agu 10', wallet: 'BCA', category: 'transport', categoryLabel: 'Transportation' },
-    { id: 3, name: 'MC Donald', amount: '-Rp65.000', status: 'pending', date: 'Agu 9', wallet: 'GoPay', category: 'food', categoryLabel: 'Food & Drinks' },
-    { id: 4, name: 'Netflix', amount: '-Rp59.000', status: 'completed', date: 'Agu 8', wallet: 'BCA', category: 'entertainment', categoryLabel: 'Entertainment' },
-    { id: 5, name: 'Uniqlo', amount: '-Rp379.000', status: 'completed', date: 'Agu 7', wallet: 'Dana', category: 'shopping', categoryLabel: 'Shopping' },
-    { id: 6, name: 'Grab Car', amount: '-Rp82.000', status: 'failed', date: 'Agu 6', wallet: 'ShopeePay', category: 'transport', categoryLabel: 'Transportation' },
-  ])
+  const [overview, setOverview] = useState(null)
+  const [transactions, setTransactions] = useState([])
+  const fetchedRef = useRef(false)
+
+  const fetchAll = useCallback(async () => {
+    const ovRes = await getDashboardOverview()
+    return { overview: ovRes.data }
+  }, [])
+
+  const applyAll = useCallback(({ overview }) => {
+    setOverview(overview)
+  }, [])
+
+  useEffect(() => {
+    if (fetchedRef.current) return
+    fetchedRef.current = true
+    fetchAll()
+      .then(applyAll)
+      .catch((e) => toast.error(e.message))
+  }, [fetchAll, applyAll])
+
+  const accountMap = useMemo(() => {
+    const map = {}
+    if (!overview) return map
+    overview.accounts?.wallets?.forEach((w) => {
+      map[`wallet:${w.id}`] = w.name
+    })
+    overview.accounts?.cards?.forEach((c) => {
+      map[`card:${c.id}`] = c.bank
+    })
+    if (overview.accounts?.cash) {
+      map[`cash:${overview.accounts.cash.id}`] = 'Cash'
+    }
+    return map
+  }, [overview])
+
+  const accountList = useMemo(() => {
+    if (!overview) return []
+    const items = []
+    overview.accounts?.wallets?.forEach((w, i) => {
+      items.push({
+        id: `wallet:${w.id}`,
+        kind: 'wallet',
+        name: w.name,
+        masked: w.masked || '••••',
+        balance: w.balance_idr,
+        gradient: cardGradients[(i + 1) % cardGradients.length],
+        icon: Smartphone,
+      })
+    })
+    overview.accounts?.cards?.forEach((c, i) => {
+      items.push({
+        id: `card:${c.id}`,
+        kind: 'card',
+        name: c.bank,
+        masked: c.masked || '••••',
+        balance: c.balance_idr,
+        gradient: cardGradients[i % cardGradients.length],
+        icon: CreditCard,
+      })
+    })
+    if (overview.accounts?.cash) {
+      items.push({
+        id: `cash:${overview.accounts.cash.id}`,
+        kind: 'cash',
+        name: 'Cash',
+        masked: 'CASH',
+        balance: overview.accounts.cash.balance_idr,
+        gradient: cardGradients[(items.length + 2) % cardGradients.length],
+        icon: Banknote,
+      })
+    }
+    return items
+  }, [overview])
+
+  const recentRows = useMemo(() => {
+    return (overview?.recent_transactions || []).map((tx) => ({
+      id: tx.id,
+      name: tx.name,
+      amount: `${tx.type === 'income' ? '+' : '-'}${formatRp(Math.abs(tx.amount))}`,
+      status: tx.status,
+      date: formatDate(tx.date),
+      wallet: accountMap[`${tx.account_type}:${tx.account_id}`] || '—',
+      category: tx.category,
+      categoryLabel: categoryLabels[tx.category] || tx.category,
+    }))
+  }, [overview, accountMap])
 
   const handleDuplicate = (tx) => {
     setTransactions((prev) => [
@@ -317,12 +359,29 @@ export function DashboardPage() {
     <DashboardActions row={row} onDuplicate={handleDuplicate} />
   )
 
-  const currentRange = balanceRanges[range]
-  const balanceData = currentRange.labels.map((label, i) => ({
-    label,
-    income: currentRange.income[i],
-    expense: currentRange.expense[i],
+  const currentBalance = overview?.balance_overview?.[range] || []
+  const spendingData = useMemo(() => {
+    const colors = [...spendingPalette]
+    return (overview?.spending || []).map((s, i) => ({
+      key: s.category,
+      label: s.label,
+      value: s.amount,
+      amount: s.amount,
+      percentage: s.percentage,
+      color: colors[i % colors.length],
+    }))
+  }, [overview])
+
+  const spendingConfig = Object.fromEntries(
+    spendingData.map((s) => [s.key, { label: s.label, color: s.color }])
+  )
+
+  const cashFlowData = (overview?.cash_flow || []).map((p) => ({
+    label: p.label,
+    income: p.income,
+    expense: p.expense,
   }))
+
   const now = new Date()
   const hour = now.getHours()
   const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening'
@@ -333,13 +392,67 @@ export function DashboardPage() {
     year: 'numeric',
   })
 
-  const budgetUsedPct = 68
+  const stats = useMemo(() => {
+    const income = overview?.income || 0
+    const expense = overview?.expense || 0
+    const savings = overview?.savings || 0
+    const savingsRate = overview?.savings_rate || 0
+    return [
+      { label: 'Total Balance', value: formatRp(overview?.total_balance || 0), change: signPct(overview?.changes?.income || 0), icon: Wallet, up: (overview?.changes?.income || 0) >= 0, hint: 'All wallets, cards & cash' },
+      { label: 'Income', value: formatRp(income), change: signPct(overview?.changes?.income || 0), icon: ArrowDownToLine, up: (overview?.changes?.income || 0) >= 0, hint: 'vs last month' },
+      { label: 'Expenses', value: formatRp(expense), change: signPct(overview?.changes?.expense || 0), icon: ArrowUpFromLine, up: (overview?.changes?.expense || 0) <= 0, hint: 'vs last month' },
+      { label: 'Savings Rate', value: `${savingsRate.toLocaleString('id-ID', { maximumFractionDigits: 1 })}%`, change: signPct(overview?.changes?.savings || 0), icon: PiggyBank, up: (overview?.changes?.savings || 0) >= 0, hint: `${formatRp(Math.max(savings, 0))} kept` },
+    ]
+  }, [overview])
+
+  const insights = useMemo(() => {
+    const top = overview?.spending?.[0]
+    const largest = overview?.largest_expense
+    const income = overview?.income || 0
+    const expense = overview?.expense || 0
+    const savings = income - expense
+    return [
+      {
+        title: 'Top Spending',
+        label: top ? top.label : '—',
+        value: top ? formatRp(top.amount) : 'Rp0',
+        sub: top ? `${Math.round(top.percentage)}% of this month` : 'No spending yet',
+        icon: top ? (categoryMeta[top.category]?.icon || ReceiptText) : ReceiptText,
+        tone: 'text-cyan-600',
+        bg: 'var(--color-chart-3)',
+      },
+      {
+        title: 'Largest Expense',
+        label: largest ? largest.name : '—',
+        value: largest ? formatRp(Math.abs(largest.amount)) : 'Rp0',
+        sub: largest ? `${formatDate(largest.date)} · ${accountMap[`${largest.account_type}:${largest.account_id}`] || '—'}` : 'No expense yet',
+        icon: ReceiptText,
+        tone: 'text-orange-600',
+        bg: 'var(--color-chart-4)',
+      },
+      {
+        title: 'Estimated Savings',
+        label: 'This month',
+        value: formatRp(savings),
+        sub: `${signPct(overview?.changes?.savings || 0)} vs last month`,
+        icon: Sparkles,
+        tone: 'text-emerald-600',
+        bg: 'var(--color-chart-2)',
+      },
+    ]
+  }, [overview, accountMap])
+
+  const budgetUsedPct = useMemo(() => {
+    const budget = overview?.budget
+    if (!budget || budget.income <= 0) return 0
+    return Math.min(100, (budget.spent / budget.income) * 100)
+  }, [overview])
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">{greeting}, Alex</h1>
+          <h1 className="text-2xl font-bold tracking-tight">{greeting}, {user?.name || 'there'}</h1>
           <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
             <CalendarDays className="size-3.5" />
             {dateLabel} · Here's what's happening with your money.
@@ -384,7 +497,7 @@ export function DashboardPage() {
           </CardHeader>
           <CardContent className="flex flex-1 flex-col">
             <ChartContainer config={balanceConfig} formatValue={formatRp} className="flex-1">
-              <AreaChart data={balanceData} showLegend fit />
+              <AreaChart data={currentBalance} showLegend fit />
             </ChartContainer>
           </CardContent>
         </Card>
@@ -395,30 +508,36 @@ export function DashboardPage() {
             <CardDescription>Where your money went this month</CardDescription>
           </CardHeader>
           <CardContent>
-            <ChartContainer config={spendingConfig} formatValue={formatRp}>
-              <PieChart
-                data={spending.map(({ key, label, amount }) => ({ key, label, value: amount }))}
-                innerRadius={70}
-                showLegend={false}
-              />
-            </ChartContainer>
-            <div className="mt-4 space-y-2">
-              {spending.map((s) => (
-                <div
-                  key={s.key}
-                  className="flex items-center justify-between gap-3 rounded-lg border border-border/50 px-3 py-2"
-                >
-                  <div className="flex min-w-0 items-center gap-2">
-                    <span className="size-2.5 shrink-0 rounded-full" style={{ background: s.color }} />
-                    <span className="truncate text-sm">{s.label}</span>
-                  </div>
-                  <div className="flex shrink-0 items-center gap-3">
-                    <span className="text-sm font-medium tabular-nums">{formatRp(s.amount)}</span>
-                    <span className="w-10 text-right text-xs text-muted-foreground tabular-nums">{s.value}%</span>
-                  </div>
+            {spendingData.length > 0 ? (
+              <>
+                <ChartContainer config={spendingConfig} formatValue={formatRp}>
+                  <PieChart
+                    data={spendingData.map(({ key, label, value }) => ({ key, label, value }))}
+                    innerRadius={70}
+                    showLegend={false}
+                  />
+                </ChartContainer>
+                <div className="mt-4 space-y-2">
+                  {spendingData.map((s) => (
+                    <div
+                      key={s.key}
+                      className="flex items-center justify-between gap-3 rounded-lg border border-border/50 px-3 py-2"
+                    >
+                      <div className="flex min-w-0 items-center gap-2">
+                        <span className="size-2.5 shrink-0 rounded-full" style={{ background: s.color }} />
+                        <span className="truncate text-sm">{s.label}</span>
+                      </div>
+                      <div className="flex shrink-0 items-center gap-3">
+                        <span className="text-sm font-medium tabular-nums">{formatRp(s.amount)}</span>
+                        <span className="w-10 text-right text-xs text-muted-foreground tabular-nums">{Math.round(s.percentage)}%</span>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
+              </>
+            ) : (
+              <p className="py-10 text-center text-sm text-muted-foreground">No expenses this month yet.</p>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -444,19 +563,19 @@ export function DashboardPage() {
           <CardContent className="flex flex-col items-center gap-4">
             <ChartContainer
               config={{ budget: { label: 'Budget used', color: 'var(--color-chart-3)' } }}
-              formatValue={(v) => `${v}%`}
+              formatValue={(v) => `${Math.round(v)}%`}
               className="w-full max-w-[14rem]"
             >
               <RadialChart value={budgetUsedPct} max={100} height={180} showLabel label="Budget Used" />
             </ChartContainer>
             <div className="w-full space-y-2">
               <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">Allocated</span>
-                <span className="font-medium tabular-nums">Rp2.110.000</span>
+                <span className="text-muted-foreground">Income</span>
+                <span className="font-medium tabular-nums">{formatRp(overview?.budget?.income || 0)}</span>
               </div>
               <div className="flex items-center justify-between text-sm">
                 <span className="text-muted-foreground">Remaining</span>
-                <span className="font-medium text-emerald-600 tabular-nums">Rp992.000</span>
+                <span className="font-medium text-emerald-600 tabular-nums">{formatRp(overview?.budget?.remaining || 0)}</span>
               </div>
             </div>
           </CardContent>
@@ -467,14 +586,14 @@ export function DashboardPage() {
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-lg font-semibold tracking-tight">Accounts</h2>
-            <p className="text-sm text-muted-foreground">Wallets & cards, total across all</p>
+            <p className="text-sm text-muted-foreground">Wallets, cards & cash, total across all</p>
           </div>
           <Button variant="outline" size="sm">
             Manage
           </Button>
         </div>
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          {accounts.map((account) => (
+          {accountList.map((account) => (
             <AccountCard key={account.id} account={account} />
           ))}
         </div>
@@ -505,7 +624,7 @@ export function DashboardPage() {
         <CardContent className="p-0">
           <DataTable
             columns={columns}
-            data={transactions}
+            data={transactions.length > 0 ? transactions : recentRows}
             pageSize={5}
             showActions
             actions={tableActions}

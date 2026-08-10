@@ -51,6 +51,9 @@ export const ENDPOINTS = {
   // Budgets
   BUDGET_OVERVIEW: `${API.BUDGET}/overview`,
 
+  // Dashboard
+  DASHBOARD_OVERVIEW: `/api/v1/dashboard/overview`,
+
   // Budget categories
   CATEGORY_BUDGETS: API.CATEGORY_BUDGET,
   CATEGORY_BUDGET: (id) => `${API.CATEGORY_BUDGET}/${id}`,
@@ -145,6 +148,9 @@ export const deleteCashWithdrawal = (id) => api.delete(ENDPOINTS.CASH_WITHDRAWAL
 
 // --- Budget overview ---
 export const getBudgetOverview = () => api.get(ENDPOINTS.BUDGET_OVERVIEW)
+
+// --- Dashboard overview ---
+export const getDashboardOverview = () => api.get(ENDPOINTS.DASHBOARD_OVERVIEW)
 
 // --- Budget categories ---
 export const getCategoryBudgets = (params) => api.get(ENDPOINTS.CATEGORY_BUDGETS, { params })

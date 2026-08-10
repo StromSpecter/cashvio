@@ -70,6 +70,8 @@ function LineBase({
 
   const [activeIndex, setActiveIndex] = useState(null)
 
+  if (data.length === 0) return null
+
   const onMove = (e) => {
     if (!showTooltip) return
     const rect = e.currentTarget.getBoundingClientRect()
