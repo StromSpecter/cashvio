@@ -37,6 +37,7 @@ import {
   deleteCard,
 } from "../../lib/api";
 import { toast } from "../../lib/toast.js";
+import { CardsSkeleton } from "../../components/templates";
 
 const DEFAULT_GRADIENT = "from-zinc-900 to-zinc-700";
 
@@ -268,6 +269,8 @@ export function CardsPage() {
       ),
     },
   ];
+
+  if (loading) return <CardsSkeleton />;
 
   return (
     <div className="space-y-6">

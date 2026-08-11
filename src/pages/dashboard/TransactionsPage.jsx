@@ -23,8 +23,7 @@ import { DataTable } from '../../components/ui/table'
 import { AddTransactionDialog } from '../../components/dialogs/AddTransactionDialog'
 import { EditTransactionDialog } from '../../components/dialogs/EditTransactionDialog'
 import { DeleteTransactionDialog } from '../../components/dialogs/DeleteTransactionDialog'
-import {
-  getTransactions,
+import { getTransactions,
   createTransaction,
   updateTransaction,
   deleteTransaction,
@@ -33,6 +32,7 @@ import {
   getCash,
 } from '../../lib/api'
 import { toast } from '../../lib/toast.js'
+import { TransactionsSkeleton } from '../../components/templates'
 
 const categories = {
   salary: { label: 'Salary', icon: Briefcase, tone: 'text-emerald-600' },
@@ -93,6 +93,7 @@ export function TransactionsPage() {
   const [query, setQuery] = useState('')
   const [category, setCategory] = useState('all')
   const [status, setStatus] = useState('all')
+  const [loading, setLoading] = useState(true)
   const [addOpen, setAddOpen] = useState(false)
   const [editOpen, setEditOpen] = useState(false)
   const [deleteOpen, setDeleteOpen] = useState(false)
@@ -134,6 +135,7 @@ export function TransactionsPage() {
       .catch((e) => {
         toast.error(e.message)
       })
+      .finally(() => setLoading(false))
   }, [fetchAll, applyAll])
 
   const accountMap = useMemo(() => {
@@ -274,6 +276,8 @@ export function TransactionsPage() {
       ),
     },
   ]
+
+  if (loading) return <TransactionsSkeleton />
 
   return (
     <div className="space-y-6">

@@ -15,6 +15,7 @@ import { WithdrawCashDialog } from '../../components/dialogs/WithdrawCashDialog'
 import { DeleteWithdrawalDialog } from '../../components/dialogs/DeleteWithdrawalDialog'
 import { getCash, getCashWithdrawals, createCashWithdrawal, deleteCashWithdrawal, getWallets, getCards } from '../../lib/api'
 import { toast } from '../../lib/toast.js'
+import { CashSkeleton } from '../../components/templates'
 
 const typeIcons = { card: Landmark, wallet: Wallet }
 
@@ -46,6 +47,7 @@ export function CashPage() {
   const [wallets, setWallets] = useState([])
   const [cards, setCards] = useState([])
   const [query, setQuery] = useState('')
+  const [loading, setLoading] = useState(true)
   const [addOpen, setAddOpen] = useState(false)
   const [deleteOpen, setDeleteOpen] = useState(false)
   const [selected, setSelected] = useState(null)
@@ -85,6 +87,7 @@ export function CashPage() {
     fetchAll()
       .then((res) => applyAll(res))
       .catch((e) => toast.error(e.message))
+      .finally(() => setLoading(false))
   }, [fetchAll, applyAll])
 
   const accountMap = useMemo(() => {
@@ -179,6 +182,8 @@ export function CashPage() {
       render: (value) => formatDate(value),
     },
   ]
+
+  if (loading) return <CashSkeleton />
 
   return (
     <div className="space-y-6">

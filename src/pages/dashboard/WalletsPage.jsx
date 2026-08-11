@@ -38,6 +38,7 @@ import {
   deleteWallet,
 } from "../../lib/api";
 import { toast } from "../../lib/toast.js";
+import { WalletsSkeleton } from "../../components/templates";
 
 const DEFAULT_TONE = "bg-primary text-primary-foreground";
 
@@ -270,6 +271,8 @@ export function WalletsPage() {
       ),
     },
   ];
+
+  if (loading) return <WalletsSkeleton />;
 
   return (
     <div className="space-y-6">

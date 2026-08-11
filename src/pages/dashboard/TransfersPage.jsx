@@ -14,6 +14,7 @@ import { AddTransferDialog } from '../../components/dialogs/AddTransferDialog'
 import { DeleteTransferDialog } from '../../components/dialogs/DeleteTransferDialog'
 import { getTransfers, createTransfer, deleteTransfer, getWallets, getCards } from '../../lib/api'
 import { toast } from '../../lib/toast.js'
+import { TransfersSkeleton } from '../../components/templates'
 
 const typeIcons = { card: Landmark, wallet: Wallet }
 
@@ -44,6 +45,7 @@ export function TransfersPage() {
   const [wallets, setWallets] = useState([])
   const [cards, setCards] = useState([])
   const [query, setQuery] = useState('')
+  const [loading, setLoading] = useState(true)
   const [addOpen, setAddOpen] = useState(false)
   const [deleteOpen, setDeleteOpen] = useState(false)
   const [selected, setSelected] = useState(null)
@@ -78,6 +80,7 @@ export function TransfersPage() {
       .catch((e) => {
         toast.error(e.message)
       })
+      .finally(() => setLoading(false))
   }, [fetchAll, applyAll])
 
   const accountMap = useMemo(() => {
@@ -175,6 +178,8 @@ export function TransfersPage() {
       render: (value) => formatDate(value),
     },
   ]
+
+  if (loading) return <TransfersSkeleton />
 
   return (
     <div className="space-y-6">

@@ -43,6 +43,7 @@ import { RadialChart } from '../../components/ui/chart'
 import { getDashboardOverview } from '../../lib/api'
 import { useAuth } from '../../lib/auth-context.js'
 import { toast } from '../../lib/toast.js'
+import { DashboardSkeleton } from '../../components/templates'
 
 const formatRp = (value) => `Rp${Number(value || 0).toLocaleString('id-ID')}`
 
@@ -261,6 +262,7 @@ export function DashboardPage() {
   const { user } = useAuth()
   const [range, setRange] = useState('30d')
   const [overview, setOverview] = useState(null)
+  const [loading, setLoading] = useState(true)
   const [transactions, setTransactions] = useState([])
   const fetchedRef = useRef(false)
 
@@ -279,6 +281,7 @@ export function DashboardPage() {
     fetchAll()
       .then(applyAll)
       .catch((e) => toast.error(e.message))
+      .finally(() => setLoading(false))
   }, [fetchAll, applyAll])
 
   const accountMap = useMemo(() => {
@@ -447,6 +450,8 @@ export function DashboardPage() {
     if (!budget || budget.income <= 0) return 0
     return Math.min(100, (budget.spent / budget.income) * 100)
   }, [overview])
+
+  if (loading) return <DashboardSkeleton />
 
   return (
     <div className="space-y-6">
