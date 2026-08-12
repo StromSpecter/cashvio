@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Plus, ShoppingCart, Briefcase, Laptop, Gift, BadgeDollarSign, UtensilsCrossed, Car, Home, Clapperboard, HeartPulse, GraduationCap } from 'lucide-react'
+import { Plus, ShoppingCart, Briefcase, Laptop, Gift, BadgeDollarSign, UtensilsCrossed, Car, Home, Clapperboard, HeartPulse, GraduationCap, Cat } from 'lucide-react'
 import { Button } from '../ui/button'
 import { Input } from '../ui/input'
 import { Label } from '../ui/label'
@@ -28,6 +28,7 @@ const categoryOptions = [
   { value: 'food', label: 'Food & Drinks', icon: UtensilsCrossed },
   { value: 'transportation', label: 'Transportation', icon: Car },
   { value: 'housing', label: 'Housing', icon: Home },
+  { value: 'pets', label: 'Pets', icon: Cat },
   { value: 'shopping', label: 'Shopping', icon: ShoppingCart },
   { value: 'entertainment', label: 'Entertainment', icon: Clapperboard },
   { value: 'health', label: 'Health', icon: HeartPulse },
