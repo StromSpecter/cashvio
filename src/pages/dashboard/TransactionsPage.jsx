@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, useCallback, useRef } from 'react'
-import { Search, Download, Plus, ArrowDownToLine, ArrowLeftRight, Store, ShoppingCart, Briefcase, Repeat, Globe, Laptop, Gift, BadgeDollarSign, UtensilsCrossed, Car, Home, Clapperboard, HeartPulse, GraduationCap, MoreHorizontal, Pencil, Trash2 } from 'lucide-react'
+import { Search, Download, Plus, ArrowDownToLine, ArrowLeftRight, Store, ShoppingCart, Briefcase, Repeat, Globe, Laptop, Gift, BadgeDollarSign, UtensilsCrossed, Car, Home, Cat, Clapperboard, HeartPulse, GraduationCap, MoreHorizontal, Pencil, Trash2 } from 'lucide-react'
 import { Button } from '../../components/ui/button'
 import { Badge } from '../../components/ui/badge'
 import { Input } from '../../components/ui/input'
@@ -42,6 +42,7 @@ const categories = {
   food: { label: 'Food & Drinks', icon: UtensilsCrossed, tone: 'text-orange-600' },
   transportation: { label: 'Transportation', icon: Car, tone: 'text-cyan-600' },
   housing: { label: 'Housing', icon: Home, tone: 'text-violet-600' },
+  pets: { label: 'Pets', icon: Cat, tone: 'text-fuchsia-600' },
   shopping: { label: 'Shopping', icon: ShoppingCart, tone: 'text-blue-600' },
   entertainment: { label: 'Entertainment', icon: Clapperboard, tone: 'text-red-600' },
   health: { label: 'Health', icon: HeartPulse, tone: 'text-emerald-600' },
@@ -256,7 +257,7 @@ export function TransactionsPage() {
       header: 'Category',
       sortable: true,
       render: (value) => {
-        const cat = categories[value] || categoryLegacy[value]
+        const cat = categories[value] || categoryLegacy[value] || { label: 'Other', icon: Store, tone: 'text-zinc-600' }
         const Icon = cat.icon
         return (
           <div className="flex items-center gap-2">
@@ -354,6 +355,7 @@ export function TransactionsPage() {
                 <SelectItem value="food">Food & Drinks</SelectItem>
                 <SelectItem value="transportation">Transportation</SelectItem>
                 <SelectItem value="housing">Housing</SelectItem>
+                <SelectItem value="pets">Pets</SelectItem>
                 <SelectItem value="shopping">Shopping</SelectItem>
                 <SelectItem value="entertainment">Entertainment</SelectItem>
                 <SelectItem value="health">Health</SelectItem>
