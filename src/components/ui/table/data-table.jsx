@@ -41,6 +41,7 @@ const DataTable = forwardRef(
       showActions = false,
       actions,
       actionsHeader = 'Actions',
+      onSortChange,
       className,
       ...props
     },
@@ -52,12 +53,14 @@ const DataTable = forwardRef(
     const [size, setSize] = useState(pageSize)
 
     const handleSort = (key) => {
-      setSort((prev) => {
-        if (!prev || prev.key !== key) return { key, direction: 'asc' }
-        if (prev.direction === 'asc') return { key, direction: 'desc' }
-        return null
-      })
+      const next = !sort || sort.key !== key
+        ? { key, direction: 'asc' }
+        : sort.direction === 'asc'
+          ? { key, direction: 'desc' }
+          : null
+      setSort(next)
       setPage(1)
+      onSortChange?.(next)
     }
 
     const handleSearch = (key, value) => {

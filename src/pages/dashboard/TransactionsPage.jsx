@@ -91,8 +91,10 @@ export function TransactionsPage() {
   const [cards, setCards] = useState([])
   const [cash, setCash] = useState(null)
   const [query, setQuery] = useState('')
+  const [debouncedQuery, setDebouncedQuery] = useState('')
   const [category, setCategory] = useState('all')
   const [status, setStatus] = useState('all')
+  const [sort, setSort] = useState(null)
   const [loading, setLoading] = useState(true)
   const [addOpen, setAddOpen] = useState(false)
   const [editOpen, setEditOpen] = useState(false)
@@ -100,43 +102,70 @@ export function TransactionsPage() {
   const [selectedTx, setSelectedTx] = useState(null)
   const fetchedRef = useRef(false)
 
-  const fetchAll = useCallback(async () => {
-    const [wRes, cRes, tRes, cashRes] = await Promise.all([
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedQuery(query), 300)
+    return () => clearTimeout(t)
+  }, [query])
+
+  const fetchBase = useCallback(async () => {
+    const [wRes, cRes, cashRes] = await Promise.all([
       getWallets({ limit: 100 }),
       getCards({ limit: 100 }),
-      getTransactions({ limit: 100 }),
       getCash(),
     ])
-    return { wallets: wRes.data, cards: cRes.data, transactions: tRes.data, cash: cashRes.data }
+    return { wallets: wRes.data, cards: cRes.data, cash: cashRes.data }
   }, [])
 
-  const applyAll = useCallback(({ wallets, cards, transactions, cash }) => {
+  const applyBase = useCallback(({ wallets, cards, cash }) => {
     setWallets(
       wallets.map((w) => ({ id: w.id, name: w.name, masked: w.masked || '', type: 'wallet', balance: w.balance_idr }))
     )
     setCards(
       cards.map((c) => ({ id: c.id, name: c.bank, masked: c.masked || '', type: 'card', balance: c.balance_idr }))
     )
-    setTransactions(transactions)
     setCash(cash)
   }, [])
 
+  const fetchTransactions = useCallback(async () => {
+    const params = { limit: 100 }
+    if (category !== 'all') params.category = category
+    if (status !== 'all') params.status = status
+    if (debouncedQuery.trim()) params.search = debouncedQuery.trim()
+    if (sort) {
+      params.sort_by = sort.key
+      params.order = sort.direction
+    }
+    const res = await getTransactions(params)
+    return res.data
+  }, [category, status, debouncedQuery, sort])
+
   const refresh = useCallback(() => {
-    fetchAll().then(applyAll).catch((e) => toast.error(e.message))
-  }, [fetchAll, applyAll])
+    fetchBase().then(applyBase).catch((e) => toast.error(e.message))
+    return fetchTransactions().then(setTransactions)
+  }, [fetchBase, applyBase, fetchTransactions])
 
   useEffect(() => {
     if (fetchedRef.current) return
     fetchedRef.current = true
-    fetchAll()
-      .then((res) => {
-        applyAll(res)
-      })
-      .catch((e) => {
-        toast.error(e.message)
-      })
+    setLoading(true)
+    refresh()
+      .catch((e) => toast.error(e.message))
       .finally(() => setLoading(false))
-  }, [fetchAll, applyAll])
+  }, [refresh])
+
+  const filterKey = useMemo(
+    () => JSON.stringify({ category, status, query: debouncedQuery.trim(), sort }),
+    [category, status, debouncedQuery, sort]
+  )
+  const prevFilterKeyRef = useRef(filterKey)
+
+  useEffect(() => {
+    if (prevFilterKeyRef.current === filterKey) return
+    prevFilterKeyRef.current = filterKey
+    fetchTransactions()
+      .then(setTransactions)
+      .catch((e) => toast.error(e.message))
+  }, [filterKey, fetchTransactions])
 
   const accountMap = useMemo(() => {
     const map = {}
@@ -146,12 +175,7 @@ export function TransactionsPage() {
     return map
   }, [wallets, cards, cash])
 
-  const filtered = transactions.filter((tx) => {
-    const matchesQuery = (tx.name || '').toLowerCase().includes(query.toLowerCase())
-    const matchesCategory = category === 'all' || tx.category === category
-    const matchesStatus = status === 'all' || tx.status === status
-    return matchesQuery && matchesCategory && matchesStatus
-  })
+  const filtered = transactions
 
   const handleAdd = async (form) => {
     try {
@@ -351,13 +375,13 @@ export function TransactionsPage() {
         </div>
 
         <TabsContent value="all">
-          <DataTable columns={columns} data={filtered} pageSize={10} showActions actions={tableActions} />
+          <DataTable columns={columns} data={filtered} pageSize={10} showActions actions={tableActions} onSortChange={setSort} />
         </TabsContent>
         <TabsContent value="income">
-          <DataTable columns={columns} data={filtered.filter((tx) => tx.type === 'income')} pageSize={10} showActions actions={tableActions} />
+          <DataTable columns={columns} data={filtered.filter((tx) => tx.type === 'income')} pageSize={10} showActions actions={tableActions} onSortChange={setSort} />
         </TabsContent>
         <TabsContent value="expenses">
-          <DataTable columns={columns} data={filtered.filter((tx) => tx.type === 'expense')} pageSize={10} showActions actions={tableActions} />
+          <DataTable columns={columns} data={filtered.filter((tx) => tx.type === 'expense')} pageSize={10} showActions actions={tableActions} onSortChange={setSort} />
         </TabsContent>
       </Tabs>
 
