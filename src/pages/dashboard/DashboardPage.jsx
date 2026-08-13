@@ -40,10 +40,11 @@ import { AreaChart } from '../../components/ui/chart'
 import { BarChart } from '../../components/ui/chart'
 import { PieChart } from '../../components/ui/chart'
 import { RadialChart } from '../../components/ui/chart'
-import { getDashboardOverview } from '../../lib/api'
+import { getDashboardOverview, createTransaction } from '../../lib/api'
 import { useAuth } from '../../lib/auth-context.js'
 import { toast } from '../../lib/toast.js'
 import { DashboardSkeleton } from '../../components/templates'
+import { AddTransactionDialog } from '../../components/dialogs/AddTransactionDialog'
 
 const formatRp = (value) => `Rp${Number(value || 0).toLocaleString('id-ID')}`
 
@@ -264,6 +265,7 @@ export function DashboardPage() {
   const [overview, setOverview] = useState(null)
   const [loading, setLoading] = useState(true)
   const [transactions, setTransactions] = useState([])
+  const [addOpen, setAddOpen] = useState(false)
   const fetchedRef = useRef(false)
 
   const fetchAll = useCallback(async () => {
@@ -337,6 +339,30 @@ export function DashboardPage() {
     }
     return items
   }, [overview])
+
+  const dialogWallets = useMemo(
+    () => (overview?.accounts?.wallets || []).map((w) => ({ id: w.id, name: w.name, balance: w.balance_idr })),
+    [overview]
+  )
+
+  const dialogCards = useMemo(
+    () => (overview?.accounts?.cards || []).map((c) => ({ id: c.id, name: c.bank, balance: c.balance_idr })),
+    [overview]
+  )
+
+  const dialogCash = overview?.accounts?.cash || null
+
+  const handleAdd = async (form) => {
+    try {
+      await createTransaction(form)
+      toast.success('Transaction added')
+      fetchAll()
+        .then(applyAll)
+        .catch((e) => toast.error(e.message))
+    } catch (e) {
+      toast.error(e.message)
+    }
+  }
 
   const recentRows = useMemo(() => {
     return (overview?.recent_transactions || []).map((tx) => ({
@@ -467,7 +493,7 @@ export function DashboardPage() {
           <Button variant="outline">
             <Download className="size-4" /> Export
           </Button>
-          <Button>
+          <Button onClick={() => setAddOpen(true)}>
             <Plus className="size-4" /> New Transaction
           </Button>
         </div>
@@ -636,6 +662,15 @@ export function DashboardPage() {
           />
         </CardContent>
       </Card>
+
+      <AddTransactionDialog
+        open={addOpen}
+        onOpenChange={setAddOpen}
+        onSubmit={handleAdd}
+        wallets={dialogWallets}
+        cards={dialogCards}
+        cash={dialogCash}
+      />
     </div>
   )
 }
