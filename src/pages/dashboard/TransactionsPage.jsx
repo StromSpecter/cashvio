@@ -30,6 +30,7 @@ import { getTransactions,
   getWallets,
   getCards,
   getCash,
+  downloadTransactions,
 } from '../../lib/api'
 import { toast } from '../../lib/toast.js'
 import { TransactionsSkeleton } from '../../components/templates'
@@ -218,6 +219,23 @@ export function TransactionsPage() {
     setDeleteOpen(true)
   }
 
+  const handleDownload = async () => {
+    try {
+      const res = await downloadTransactions()
+      const blob = new Blob([res.data], { type: 'text/csv' })
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = 'transactions.csv'
+      document.body.appendChild(a)
+      a.click()
+      a.remove()
+      window.URL.revokeObjectURL(url)
+    } catch (e) {
+      toast.error(e.message)
+    }
+  }
+
   const tableActions = (row) => (
     <Dropdown>
       <DropdownTrigger>
@@ -314,7 +332,7 @@ export function TransactionsPage() {
           </p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline">
+          <Button variant="outline" onClick={handleDownload}>
             <Download className="size-4" /> Export
           </Button>
           <Button onClick={() => setAddOpen(true)}>

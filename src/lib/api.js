@@ -38,6 +38,7 @@ export const ENDPOINTS = {
   // Transactions
   TRANSACTIONS: API.TRANSACTION,
   TRANSACTION: (id) => `${API.TRANSACTION}/${id}`,
+  TRANSACTIONS_DOWNLOAD: `${API.TRANSACTION}/download`,
 
   // Transfers
   TRANSFERS: API.TRANSFER,
@@ -132,6 +133,7 @@ export const getTransaction = (id) => api.get(ENDPOINTS.TRANSACTION(id))
 export const createTransaction = (payload) => api.post(ENDPOINTS.TRANSACTIONS, payload)
 export const updateTransaction = (id, payload) => api.put(ENDPOINTS.TRANSACTION(id), payload)
 export const deleteTransaction = (id) => api.delete(ENDPOINTS.TRANSACTION(id))
+export const downloadTransactions = () => api.get(ENDPOINTS.TRANSACTIONS_DOWNLOAD, { responseType: 'blob' })
 
 // --- Transfers ---
 export const getTransfers = (params) => api.get(ENDPOINTS.TRANSFERS, { params })
