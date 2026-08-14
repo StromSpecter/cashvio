@@ -14,6 +14,7 @@ import {
   LogOut,
   CircleDollarSign,
 } from "lucide-react";
+import { useAuth } from "../../lib/auth-context.js";
 
 const navSections = [
   {
@@ -49,6 +50,7 @@ const navSections = [
 ];
 
 export function DashboardSidebar() {
+    const { logout } = useAuth()
   return (
     <div className="flex h-full flex-col">
       <div className="flex h-14 items-center border-b border-border px-6">
@@ -90,7 +92,10 @@ export function DashboardSidebar() {
       </nav>
 
       <div className="border-t border-border p-4">
-        <button className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground">
+        <button
+          className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+          onClick={logout}
+        >
           <LogOut className="size-4" />
           Log out
         </button>
