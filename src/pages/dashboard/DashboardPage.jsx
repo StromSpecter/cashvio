@@ -39,7 +39,6 @@ import { ChartContainer } from '../../components/ui/chart'
 import { AreaChart } from '../../components/ui/chart'
 import { BarChart } from '../../components/ui/chart'
 import { PieChart } from '../../components/ui/chart'
-import { RadialChart } from '../../components/ui/chart'
 import { getDashboardOverview, createTransaction } from '../../lib/api'
 import { useAuth } from '../../lib/auth-context.js'
 import { toast } from '../../lib/toast.js'
@@ -471,12 +470,6 @@ export function DashboardPage() {
     ]
   }, [overview, accountMap])
 
-  const budgetUsedPct = useMemo(() => {
-    const budget = overview?.budget
-    if (!budget || budget.income <= 0) return 0
-    return Math.min(100, (budget.spent / budget.income) * 100)
-  }, [overview])
-
   if (loading) return <DashboardSkeleton />
 
   return (
@@ -583,32 +576,6 @@ export function DashboardPage() {
             <ChartContainer config={cashFlowConfig} formatValue={formatRp} className="h-64">
               <BarChart data={cashFlowData} showLegend height={256} />
             </ChartContainer>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Monthly Budget</CardTitle>
-            <CardDescription>Budget used up to today</CardDescription>
-          </CardHeader>
-          <CardContent className="flex flex-col items-center gap-4">
-            <ChartContainer
-              config={{ budget: { label: 'Budget used', color: 'var(--color-chart-3)' } }}
-              formatValue={(v) => `${Math.round(v)}%`}
-              className="w-full max-w-[14rem]"
-            >
-              <RadialChart value={budgetUsedPct} max={100} height={180} showLabel label="Budget Used" />
-            </ChartContainer>
-            <div className="w-full space-y-2">
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">Income</span>
-                <span className="font-medium tabular-nums">{formatRp(overview?.budget?.income || 0)}</span>
-              </div>
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">Remaining</span>
-                <span className="font-medium text-emerald-600 tabular-nums">{formatRp(overview?.budget?.remaining || 0)}</span>
-              </div>
-            </div>
           </CardContent>
         </Card>
       </div>

@@ -36,11 +36,6 @@ const navSections = [
     items: [
       { to: "/dashboard/analytics", label: "Analytics", icon: BarChart3 },
       { to: "/dashboard/reports", label: "Reports", icon: PieChart },
-      {
-        to: "/dashboard/budget",
-        label: "Budgeting",
-        icon: PieChart,
-      },
     ],
   },
   {

@@ -12,8 +12,6 @@ export const API = {
   TRANSACTION: '/api/v1/transactions',
   TRANSFER: '/api/v1/transfers',
   CASH: '/api/v1/cash',
-  BUDGET: '/api/v1/budgets',
-  CATEGORY_BUDGET: '/api/v1/category-budgets',
   HEALTH: '/health',
 }
 
@@ -49,15 +47,8 @@ export const ENDPOINTS = {
   CASH_WITHDRAWALS: `${API.CASH}/withdrawals`,
   CASH_WITHDRAWAL: (id) => `${API.CASH}/withdrawals/${id}`,
 
-  // Budgets
-  BUDGET_OVERVIEW: `${API.BUDGET}/overview`,
-
   // Dashboard
   DASHBOARD_OVERVIEW: `/api/v1/dashboard/overview`,
-
-  // Budget categories
-  CATEGORY_BUDGETS: API.CATEGORY_BUDGET,
-  CATEGORY_BUDGET: (id) => `${API.CATEGORY_BUDGET}/${id}`,
 
   // Health
   HEALTH: API.HEALTH,
@@ -148,18 +139,8 @@ export const getCashWithdrawal = (id) => api.get(ENDPOINTS.CASH_WITHDRAWAL(id))
 export const createCashWithdrawal = (payload) => api.post(ENDPOINTS.CASH_WITHDRAWALS, payload)
 export const deleteCashWithdrawal = (id) => api.delete(ENDPOINTS.CASH_WITHDRAWAL(id))
 
-// --- Budget overview ---
-export const getBudgetOverview = () => api.get(ENDPOINTS.BUDGET_OVERVIEW)
-
 // --- Dashboard overview ---
 export const getDashboardOverview = () => api.get(ENDPOINTS.DASHBOARD_OVERVIEW)
-
-// --- Budget categories ---
-export const getCategoryBudgets = (params) => api.get(ENDPOINTS.CATEGORY_BUDGETS, { params })
-export const getCategoryBudget = (id) => api.get(ENDPOINTS.CATEGORY_BUDGET(id))
-export const createCategoryBudget = (payload) => api.post(ENDPOINTS.CATEGORY_BUDGETS, payload)
-export const updateCategoryBudget = (id, payload) => api.put(ENDPOINTS.CATEGORY_BUDGET(id), payload)
-export const deleteCategoryBudget = (id) => api.delete(ENDPOINTS.CATEGORY_BUDGET(id))
 
 // --- Health ---
 export const health = () => api.get(ENDPOINTS.HEALTH)

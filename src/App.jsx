@@ -1,6 +1,5 @@
 import { Route, Routes, Navigate } from "react-router"
 import { Toaster } from "./lib/toast.jsx"
-import { BudgetPage } from "./pages/dashboard/BudgetPage"
 import SigninPage from "./pages/auth/SigninPage"
 import SignupPage from "./pages/auth/SignupPage"
 import { DashboardLayout } from "./layouts/DashboardLayout"
@@ -43,7 +42,6 @@ function App() {
           }
         >
           <Route path="/dashboard" element={<DashboardPage />} />
-          <Route path="/dashboard/budget" element={<BudgetPage />} />
           <Route path="/dashboard/cash" element={<CashPage />} />
           <Route path="/dashboard/wallets" element={<WalletsPage />} />
           <Route path="/dashboard/cards" element={<CardsPage />} />
