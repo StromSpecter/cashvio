@@ -12,6 +12,7 @@ export const API = {
   TRANSACTION: '/api/v1/transactions',
   TRANSFER: '/api/v1/transfers',
   CASH: '/api/v1/cash',
+  INVESTMENT: '/api/v1/investments',
   HEALTH: '/health',
 }
 
@@ -46,6 +47,11 @@ export const ENDPOINTS = {
   CASH: API.CASH,
   CASH_WITHDRAWALS: `${API.CASH}/withdrawals`,
   CASH_WITHDRAWAL: (id) => `${API.CASH}/withdrawals/${id}`,
+
+  // Investments
+  INVESTMENTS: API.INVESTMENT,
+  INVESTMENT: (id) => `${API.INVESTMENT}/${id}`,
+  INVESTMENT_PRICES: `${API.INVESTMENT}/prices`,
 
   // Dashboard
   DASHBOARD_OVERVIEW: `/api/v1/dashboard/overview`,
@@ -138,6 +144,14 @@ export const getCashWithdrawals = (params) => api.get(ENDPOINTS.CASH_WITHDRAWALS
 export const getCashWithdrawal = (id) => api.get(ENDPOINTS.CASH_WITHDRAWAL(id))
 export const createCashWithdrawal = (payload) => api.post(ENDPOINTS.CASH_WITHDRAWALS, payload)
 export const deleteCashWithdrawal = (id) => api.delete(ENDPOINTS.CASH_WITHDRAWAL(id))
+
+// --- Investments ---
+export const getInvestments = (params) => api.get(ENDPOINTS.INVESTMENTS, { params })
+export const getInvestmentPrices = () => api.get(ENDPOINTS.INVESTMENT_PRICES)
+export const getInvestment = (id) => api.get(ENDPOINTS.INVESTMENT(id))
+export const createInvestment = (payload) => api.post(ENDPOINTS.INVESTMENTS, payload)
+export const updateInvestment = (id, payload) => api.put(ENDPOINTS.INVESTMENT(id), payload)
+export const deleteInvestment = (id) => api.delete(ENDPOINTS.INVESTMENT(id))
 
 // --- Dashboard overview ---
 export const getDashboardOverview = () => api.get(ENDPOINTS.DASHBOARD_OVERVIEW)

@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router'
 import {
   Download,
@@ -10,6 +10,7 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   ChartPie,
+  RefreshCw,
 } from 'lucide-react'
 import { Button } from '../../components/ui/button'
 import { Badge } from '../../components/ui/badge'
@@ -19,14 +20,14 @@ import { DataTable } from '../../components/ui/table'
 import { ChartContainer } from '../../components/ui/chart'
 import { AreaChart } from '../../components/ui/chart'
 import { PieChart } from '../../components/ui/chart'
-import { useInvestments } from '../../lib/investment-context'
+import { getInvestments, getInvestmentPrices } from '../../lib/api'
+import { toast } from '../../lib/toast.js'
 import {
   typeMeta,
   formatRp,
   formatRpSigned,
   signPct,
   formatUnits,
-  totalUnits,
   investedOf,
   valueOf,
   gainOf,
@@ -60,15 +61,40 @@ function StatCard({ stat }) {
 }
 
 export function PortfolioPage() {
-  const { investments } = useInvestments()
+  const [investments, setInvestments] = useState([])
+  const [prices, setPrices] = useState({})
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    let cancelled = false
+    Promise.all([getInvestments({ limit: 100 }), getInvestmentPrices()])
+      .then(([invRes, priceRes]) => {
+        if (cancelled) return
+        setInvestments(invRes.data || [])
+        const map = {}
+        ;(priceRes.data || []).forEach((p) => {
+          map[p.symbol] = p
+        })
+        setPrices(map)
+      })
+      .catch((e) => {
+        if (!cancelled) toast.error(e.message)
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   const totals = useMemo(() => {
     const invested = investments.reduce((sum, i) => sum + investedOf(i), 0)
-    const value = investments.reduce((sum, i) => sum + valueOf(i), 0)
+    const value = investments.reduce((sum, i) => sum + valueOf(i, prices[i.ticker]), 0)
     const gain = value - invested
     const gainPct = invested > 0 ? (gain / invested) * 100 : 0
     return { invested, value, gain, gainPct }
-  }, [investments])
+  }, [investments, prices])
 
   const stats = [
     {
@@ -126,12 +152,12 @@ export function PortfolioPage() {
   const allocation = useMemo(() => {
     const grouped = {}
     investments.forEach((i) => {
-      grouped[i.type] = (grouped[i.type] || 0) + valueOf(i)
+      grouped[i.type] = (grouped[i.type] || 0) + valueOf(i, prices[i.ticker])
     })
     return Object.entries(grouped)
       .map(([key, value]) => ({ key, label: typeMeta[key].label, value }))
       .sort((a, b) => b.value - a.value)
-  }, [investments])
+  }, [investments, prices])
 
   const allocationConfig = Object.fromEntries(
     allocation.map((a) => [a.key, { label: a.label, color: typeMeta[a.key].color }])
@@ -201,7 +227,9 @@ export function PortfolioPage() {
         >
           {value >= 0 ? <ArrowUpRight className="size-3.5" /> : <ArrowDownRight className="size-3.5" />}
           {formatRpSigned(value)}
-          <span className="text-xs text-muted-foreground">({signPct(gainPctOf(row))})</span>
+          <span className="text-xs text-muted-foreground">
+            ({signPct(gainPctOf(row, prices[row.ticker]))})
+          </span>
         </span>
       ),
     },
@@ -209,13 +237,12 @@ export function PortfolioPage() {
 
   const rows = useMemo(
     () =>
-      investments.map((i) => ({
+investments.map((i) => ({
         ...i,
-        units: totalUnits(i),
-        marketValue: valueOf(i),
-        gain: gainOf(i),
+        marketValue: valueOf(i, prices[i.ticker]),
+        gain: gainOf(i, prices[i.ticker]),
       })),
-    [investments]
+    [investments, prices]
   )
 
   return (
@@ -245,7 +272,18 @@ export function PortfolioPage() {
         ))}
       </div>
 
-      {investments.length === 0 ? (
+      <p className="flex items-center gap-2 rounded-lg border border-border bg-muted/50 px-4 py-2.5 text-xs text-muted-foreground">
+        <RefreshCw className="size-3.5 shrink-0" />
+        Harga saham (IDX) diperbarui otomatis setiap hari pukul 17.00–23.59 WIB.
+      </p>
+
+      {loading ? (
+        <Card>
+          <CardContent className="py-16 text-center text-sm text-muted-foreground">
+            Loading portfolio...
+          </CardContent>
+        </Card>
+      ) : investments.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center gap-4 py-16 text-center">
             <div className="rounded-full bg-accent p-4">

@@ -18,6 +18,7 @@ import {
   SelectContent,
   SelectItem,
 } from '../ui/select'
+import { DatePicker } from '../ui/datepicker'
 import { INVESTMENT_TYPES } from '../../lib/investments'
 
 const formatRp = (n) => `Rp${Number(n || 0).toLocaleString('id-ID')}`
@@ -39,7 +40,9 @@ export function EditInvestmentDialog({ investment, open, onOpenChange, onSubmit,
   const [ticker, setTicker] = useState('')
   const [app, setApp] = useState('')
   const [account, setAccount] = useState('')
-  const [currentPrice, setCurrentPrice] = useState('')
+  const [units, setUnits] = useState('')
+  const [buyPrice, setBuyPrice] = useState('')
+  const [buyDate, setBuyDate] = useState('')
   const [error, setError] = useState('')
   const [prevInvestment, setPrevInvestment] = useState(null)
 
@@ -54,7 +57,9 @@ export function EditInvestmentDialog({ investment, open, onOpenChange, onSubmit,
         ? `${investment.account_type}:${investment.account_id}`
         : ''
     )
-    setCurrentPrice(investment ? String(investment.current_price ?? '') : '')
+    setUnits(investment ? String(investment.units ?? '') : '')
+    setBuyPrice(investment ? String(investment.buy_price ?? '') : '')
+    setBuyDate(investment ? investment.date || '' : '')
     setError('')
   }
 
@@ -64,8 +69,12 @@ export function EditInvestmentDialog({ investment, open, onOpenChange, onSubmit,
       setError('Asset name is required')
       return
     }
-    if (!(parseFloat(currentPrice) > 0)) {
-      setError('Current price must be greater than 0')
+    if (!(parseFloat(units) > 0)) {
+      setError('Units must be greater than 0')
+      return
+    }
+    if (!(parseFloat(buyPrice) > 0)) {
+      setError('Buy price must be greater than 0')
       return
     }
     setError('')
@@ -73,11 +82,13 @@ export function EditInvestmentDialog({ investment, open, onOpenChange, onSubmit,
     onSubmit(investment.id, {
       type,
       name: name.trim(),
-      ticker: ticker.trim().toUpperCase() || '—',
+      ticker: ticker.trim().toUpperCase(),
       app: app.trim(),
       account_type: accountType,
       account_id: accountId,
-      current_price: parseFloat(currentPrice),
+      units: parseFloat(units),
+      buy_price: parseFloat(buyPrice),
+      date: buyDate || undefined,
     })
     onOpenChange(false)
   }
@@ -88,7 +99,7 @@ export function EditInvestmentDialog({ investment, open, onOpenChange, onSubmit,
         <DialogHeader>
           <DialogTitle>Edit investment</DialogTitle>
           <DialogDescription>
-            Update the asset details. Purchase lots stay untouched.
+            Update the investment and its matching transaction.
           </DialogDescription>
         </DialogHeader>
         <form className="space-y-4" onSubmit={handleSubmit}>
@@ -158,19 +169,44 @@ export function EditInvestmentDialog({ investment, open, onOpenChange, onSubmit,
               No accounts yet. Add a wallet, card, or cash before adding an investment.
             </p>
           )}
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="edit-inv-units">Units</Label>
+              <Input
+                id="edit-inv-units"
+                type="number"
+                min="0"
+                step="any"
+                value={units}
+                onChange={(e) => setUnits(e.target.value)}
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-inv-buy-price">Buy price</Label>
+              <Input
+                id="edit-inv-buy-price"
+                type="number"
+                min="0"
+                step="any"
+                value={buyPrice}
+                onChange={(e) => setBuyPrice(e.target.value)}
+                required
+              />
+            </div>
+          </div>
           <div className="space-y-2">
-            <Label htmlFor="edit-inv-current-price">Current price</Label>
-            <Input
-              id="edit-inv-current-price"
-              placeholder="e.g. 10250"
-              type="number"
-              min="0"
-              step="any"
-              value={currentPrice}
-              onChange={(e) => setCurrentPrice(e.target.value)}
-              required
+            <Label htmlFor="edit-inv-date">Date</Label>
+            <DatePicker
+              id="edit-inv-date"
+              value={buyDate}
+              onChange={setBuyDate}
+              placeholder="Pick a date"
             />
           </div>
+          <p className="rounded-md border border-border bg-muted/50 p-3 text-xs text-muted-foreground">
+            Current prices are fetched automatically for stock tickers between 17:00 and 23:59.
+          </p>
           <DialogFooter className="flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-end">
             {error && <p className="text-sm text-destructive">{error}</p>}
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>

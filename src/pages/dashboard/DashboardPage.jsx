@@ -21,6 +21,7 @@ import {
   Clapperboard,
   Landmark,
   Download,
+  TrendingUp,
 } from 'lucide-react'
 import { Button } from '../../components/ui/button'
 import { Badge } from '../../components/ui/badge'
@@ -66,6 +67,7 @@ const categoryLabels = {
   groceries: 'Groceries',
   subscription: 'Subscription',
   travel: 'Travel',
+  investment: 'Investment',
 }
 
 const categoryMeta = {
@@ -75,6 +77,7 @@ const categoryMeta = {
   shopping: { icon: ShoppingBag, tone: 'text-blue-600' },
   entertainment: { icon: Clapperboard, tone: 'text-red-600' },
   salary: { icon: Landmark, tone: 'text-emerald-600' },
+  investment: { icon: TrendingUp, tone: 'text-violet-600' },
 }
 
 const cardGradients = [

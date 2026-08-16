@@ -34,7 +34,7 @@ function AccountOption({ account }) {
   )
 }
 
-export function AddInvestmentDialog({ open, onOpenChange, onSubmit, accounts = [] }) {
+export function AddInvestmentDialog({ open, onOpenChange, onSubmit, accounts = [], defaults = null }) {
   const [type, setType] = useState('stock')
   const [name, setName] = useState('')
   const [ticker, setTicker] = useState('')
@@ -42,19 +42,35 @@ export function AddInvestmentDialog({ open, onOpenChange, onSubmit, accounts = [
   const [account, setAccount] = useState('')
   const [units, setUnits] = useState('')
   const [buyPrice, setBuyPrice] = useState('')
-  const [currentPrice, setCurrentPrice] = useState('')
   const [buyDate, setBuyDate] = useState('')
   const [error, setError] = useState('')
+  const [prevDefaults, setPrevDefaults] = useState(null)
+
+  if (defaults !== prevDefaults) {
+    setPrevDefaults(defaults)
+    setType(defaults ? defaults.type || 'stock' : 'stock')
+    setName(defaults ? defaults.name || '' : '')
+    setTicker(defaults ? defaults.ticker || '' : '')
+    setApp(defaults ? defaults.app || '' : '')
+    setAccount(
+      defaults && defaults.account_type && defaults.account_id
+        ? `${defaults.account_type}:${defaults.account_id}`
+        : ''
+    )
+  }
 
   const reset = () => {
-    setType('stock')
-    setName('')
-    setTicker('')
-    setApp('')
-    setAccount('')
+    setType(defaults ? defaults.type || 'stock' : 'stock')
+    setName(defaults ? defaults.name || '' : '')
+    setTicker(defaults ? defaults.ticker || '' : '')
+    setApp(defaults ? defaults.app || '' : '')
+    setAccount(
+      defaults && defaults.account_type && defaults.account_id
+        ? `${defaults.account_type}:${defaults.account_id}`
+        : ''
+    )
     setUnits('')
     setBuyPrice('')
-    setCurrentPrice('')
     setBuyDate('')
     setError('')
   }
@@ -73,10 +89,6 @@ export function AddInvestmentDialog({ open, onOpenChange, onSubmit, accounts = [
       setError('Buy price must be greater than 0')
       return
     }
-    if (!(parseFloat(currentPrice) > 0)) {
-      setError('Current price must be greater than 0')
-      return
-    }
     if (!account) {
       setError('Please select a source wallet, card, or cash')
       return
@@ -86,16 +98,13 @@ export function AddInvestmentDialog({ open, onOpenChange, onSubmit, accounts = [
     onSubmit({
       type,
       name: name.trim(),
-      ticker: ticker.trim().toUpperCase() || '—',
+      ticker: ticker.trim().toUpperCase(),
       app: app.trim(),
       account_type: accountType,
       account_id: accountId,
-      current_price: parseFloat(currentPrice),
-      lot: {
-        units: parseFloat(units),
-        buy_price: parseFloat(buyPrice),
-        buy_date: buyDate || undefined,
-      },
+      units: parseFloat(units),
+      buy_price: parseFloat(buyPrice),
+      date: buyDate || undefined,
     })
     reset()
     onOpenChange(false)
@@ -105,9 +114,11 @@ export function AddInvestmentDialog({ open, onOpenChange, onSubmit, accounts = [
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Add investment</DialogTitle>
+          <DialogTitle>{defaults ? `Add lot to ${defaults.name}` : 'Add investment'}</DialogTitle>
           <DialogDescription>
-            Add a new asset with its first purchase lot.
+            {defaults
+              ? 'Record a new purchase for this asset. It creates a matching expense in transactions.'
+              : 'Add a new investment. It creates a matching expense in transactions.'}
           </DialogDescription>
         </DialogHeader>
         <form className="space-y-4" onSubmit={handleSubmit}>
@@ -179,7 +190,7 @@ export function AddInvestmentDialog({ open, onOpenChange, onSubmit, accounts = [
           )}
 
           <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-            Purchase lot
+            Purchase details
           </p>
           <div className="space-y-2">
             <Label htmlFor="add-inv-units">Units</Label>
@@ -216,23 +227,9 @@ export function AddInvestmentDialog({ open, onOpenChange, onSubmit, accounts = [
               placeholder="Pick a date"
             />
           </div>
-
-          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-            Current price
+          <p className="rounded-md border border-border bg-muted/50 p-3 text-xs text-muted-foreground">
+            Current prices are fetched automatically for stock tickers between 17:00 and 23:59.
           </p>
-          <div className="space-y-2">
-            <Label htmlFor="add-inv-current-price">Current price</Label>
-            <Input
-              id="add-inv-current-price"
-              placeholder="e.g. 10250"
-              type="number"
-              min="0"
-              step="any"
-              value={currentPrice}
-              onChange={(e) => setCurrentPrice(e.target.value)}
-              required
-            />
-          </div>
           <DialogFooter className="flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-end">
             {error && <p className="text-sm text-destructive">{error}</p>}
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>

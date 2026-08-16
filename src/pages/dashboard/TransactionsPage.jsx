@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, useCallback, useRef } from 'react'
-import { Search, Download, Plus, ArrowDownToLine, ArrowLeftRight, Store, ShoppingCart, Briefcase, Repeat, Globe, Laptop, Gift, BadgeDollarSign, UtensilsCrossed, Car, Home, Cat, Clapperboard, HeartPulse, GraduationCap, MoreHorizontal, Pencil, Trash2 } from 'lucide-react'
+import { Search, Download, Plus, ArrowDownToLine, ArrowLeftRight, Store, ShoppingCart, Briefcase, Repeat, Globe, Laptop, Gift, BadgeDollarSign, UtensilsCrossed, Car, Home, Cat, Clapperboard, HeartPulse, GraduationCap, TrendingUp, MoreHorizontal, Pencil, Trash2 } from 'lucide-react'
 import { Button } from '../../components/ui/button'
 import { Badge } from '../../components/ui/badge'
 import { Input } from '../../components/ui/input'
@@ -23,10 +23,19 @@ import { DataTable } from '../../components/ui/table'
 import { AddTransactionDialog } from '../../components/dialogs/AddTransactionDialog'
 import { EditTransactionDialog } from '../../components/dialogs/EditTransactionDialog'
 import { DeleteTransactionDialog } from '../../components/dialogs/DeleteTransactionDialog'
+import { AddInvestmentDialog } from '../../components/dialogs/AddInvestmentDialog'
+import { EditInvestmentDialog } from '../../components/dialogs/EditInvestmentDialog'
+import { DeleteInvestmentDialog } from '../../components/dialogs/DeleteInvestmentDialog'
+import { InvestmentsTable } from '../../components/investments/InvestmentsTable'
 import { getTransactions,
   createTransaction,
   updateTransaction,
   deleteTransaction,
+  createInvestment,
+  updateInvestment,
+  deleteInvestment,
+  getInvestments,
+  getInvestmentPrices,
   getWallets,
   getCards,
   getCash,
@@ -48,6 +57,7 @@ const categories = {
   entertainment: { label: 'Entertainment', icon: Clapperboard, tone: 'text-red-600' },
   health: { label: 'Health', icon: HeartPulse, tone: 'text-emerald-600' },
   education: { label: 'Education', icon: GraduationCap, tone: 'text-indigo-600' },
+  investment: { label: 'Investment', icon: TrendingUp, tone: 'text-violet-600' },
 }
 
 const categoryLegacy = {
@@ -99,6 +109,12 @@ export function TransactionsPage() {
   const [sort, setSort] = useState(null)
   const [loading, setLoading] = useState(true)
   const [addOpen, setAddOpen] = useState(false)
+  const [addInvestOpen, setAddInvestOpen] = useState(false)
+  const [addInvestDefaults, setAddInvestDefaults] = useState(null)
+  const [editInvestTarget, setEditInvestTarget] = useState(null)
+  const [deleteInvestTarget, setDeleteInvestTarget] = useState(null)
+  const [investments, setInvestments] = useState([])
+  const [prices, setPrices] = useState({})
   const [editOpen, setEditOpen] = useState(false)
   const [deleteOpen, setDeleteOpen] = useState(false)
   const [selectedTx, setSelectedTx] = useState(null)
@@ -146,6 +162,23 @@ export function TransactionsPage() {
     return fetchTransactions().then(setTransactions)
   }, [fetchBase, applyBase, fetchTransactions])
 
+  const fetchInvestTab = async () => {
+    try {
+      const [invRes, priceRes] = await Promise.all([
+        getInvestments({ limit: 100 }),
+        getInvestmentPrices(),
+      ])
+      setInvestments(invRes.data || [])
+      const map = {}
+      ;(priceRes.data || []).forEach((p) => {
+        map[p.symbol] = p
+      })
+      setPrices(map)
+    } catch (e) {
+      toast.error(e.message)
+    }
+  }
+
   useEffect(() => {
     if (fetchedRef.current) return
     fetchedRef.current = true
@@ -153,6 +186,7 @@ export function TransactionsPage() {
     refresh()
       .catch((e) => toast.error(e.message))
       .finally(() => setLoading(false))
+    fetchInvestTab()
   }, [refresh])
 
   const filterKey = useMemo(
@@ -178,6 +212,50 @@ export function TransactionsPage() {
   }, [wallets, cards, cash])
 
   const filtered = transactions
+
+  const accounts = useMemo(() => {
+    return [
+      ...wallets.map((w) => ({ key: `wallet:${w.id}`, label: w.name, balance: w.balance })),
+      ...cards.map((c) => ({ key: `card:${c.id}`, label: c.name, balance: c.balance })),
+      ...(cash ? [{ key: `cash:${cash.id}`, label: 'Cash', balance: cash.balance_idr }] : []),
+    ]
+  }, [wallets, cards, cash])
+
+  const handleAddInvestment = async (form) => {
+    try {
+      await createInvestment(form)
+      toast.success('Investment added')
+      setAddInvestOpen(false)
+      await Promise.all([refresh(), fetchInvestTab()])
+    } catch (e) {
+      toast.error(e.message)
+    }
+  }
+
+  const handleEditInvestment = async (id, form) => {
+    try {
+      await updateInvestment(id, form)
+      toast.success('Investment updated')
+      setEditInvestTarget(null)
+      await Promise.all([refresh(), fetchInvestTab()])
+    } catch (e) {
+      toast.error(e.message)
+    }
+  }
+
+  const handleDeleteInvestment = async (target) => {
+    try {
+      const ids = Array.isArray(target.purchases)
+        ? target.purchases.map((p) => p.id)
+        : [target.id]
+      await Promise.all(ids.map((id) => deleteInvestment(id)))
+      toast.success(ids.length > 1 ? 'Purchases deleted' : 'Investment deleted')
+      setDeleteInvestTarget(null)
+      await Promise.all([refresh(), fetchInvestTab()])
+    } catch (e) {
+      toast.error(e.message)
+    }
+  }
 
   const handleAdd = async (form) => {
     try {
@@ -347,6 +425,7 @@ export function TransactionsPage() {
             <TabsTrigger value="all">All</TabsTrigger>
             <TabsTrigger value="income">Income</TabsTrigger>
             <TabsTrigger value="expenses">Expenses</TabsTrigger>
+            <TabsTrigger value="investments">Investments</TabsTrigger>
           </TabsList>
           <div className="flex flex-col gap-2 sm:flex-row">
             <div className="relative">
@@ -378,6 +457,7 @@ export function TransactionsPage() {
                 <SelectItem value="entertainment">Entertainment</SelectItem>
                 <SelectItem value="health">Health</SelectItem>
                 <SelectItem value="education">Education</SelectItem>
+                <SelectItem value="investment">Investment</SelectItem>
               </SelectContent>
             </Select>
             <Select value={status} onValueChange={setStatus}>
@@ -403,9 +483,68 @@ export function TransactionsPage() {
         <TabsContent value="expenses">
           <DataTable columns={columns} data={filtered.filter((tx) => tx.type === 'expense')} pageSize={10} showActions actions={tableActions} onSortChange={setSort} />
         </TabsContent>
+        <TabsContent value="investments">
+          <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm text-muted-foreground">
+              Investments with the same ticker are merged; expand to see each purchase.
+            </p>
+            <Button size="sm" onClick={() => { setAddInvestDefaults(null); setAddInvestOpen(true) }}>
+              <Plus className="size-4" /> Add Investment
+            </Button>
+          </div>
+          {investments.length > 0 ? (
+            <InvestmentsTable
+              investments={investments}
+              prices={prices}
+              onAddLot={(g) => {
+                setAddInvestDefaults({
+                  type: g.type,
+                  name: g.name,
+                  ticker: g.ticker,
+                  app: g.app,
+                  account_type: g.purchases[0]?.account_type,
+                  account_id: g.purchases[0]?.account_id,
+                })
+                setAddInvestOpen(true)
+              }}
+              onEdit={(p) => setEditInvestTarget(p)}
+              onDelete={(p) => setDeleteInvestTarget(p)}
+              onDeleteAll={(g) => setDeleteInvestTarget(g)}
+              emptyMessage="No investment records found."
+            />
+          ) : (
+            <p className="rounded-lg border border-border bg-muted/50 p-6 text-center text-sm text-muted-foreground">
+              No investments yet. Add one to see it here.
+            </p>
+          )}
+        </TabsContent>
       </Tabs>
 
       <AddTransactionDialog open={addOpen} onOpenChange={setAddOpen} onSubmit={handleAdd} wallets={wallets} cards={cards} cash={cash} />
+      <AddInvestmentDialog
+        open={addInvestOpen}
+        onOpenChange={setAddInvestOpen}
+        onSubmit={handleAddInvestment}
+        accounts={accounts}
+        defaults={addInvestDefaults}
+      />
+      <EditInvestmentDialog
+        open={!!editInvestTarget}
+        onOpenChange={(open) => {
+          if (!open) setEditInvestTarget(null)
+        }}
+        investment={editInvestTarget}
+        onSubmit={handleEditInvestment}
+        accounts={accounts}
+      />
+      <DeleteInvestmentDialog
+        open={!!deleteInvestTarget}
+        onOpenChange={(open) => {
+          if (!open) setDeleteInvestTarget(null)
+        }}
+        investment={deleteInvestTarget}
+        onConfirm={handleDeleteInvestment}
+      />
       <EditTransactionDialog transaction={selectedTx} open={editOpen} onOpenChange={setEditOpen} onSubmit={handleEdit} wallets={wallets} cards={cards} cash={cash} />
       <DeleteTransactionDialog transaction={selectedTx} open={deleteOpen} onOpenChange={setDeleteOpen} onConfirm={handleDelete} />
     </div>
