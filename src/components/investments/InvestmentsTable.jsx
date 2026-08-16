@@ -53,6 +53,17 @@ function LabeledRow({ label, children }) {
   )
 }
 
+function LotBadge({ lots }) {
+  return (
+    <span
+      className="ml-1.5 rounded-full bg-accent px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground"
+      title="1 lot = 100 shares"
+    >
+      {formatUnits(lots)} lots
+    </span>
+  )
+}
+
 function PurchaseMobileCard({ purchase, price, onEdit, onDelete }) {
   return (
     <div className="flex flex-col gap-2 border-b border-border/50 px-3 py-3 sm:hidden last:border-b-0">
@@ -68,7 +79,14 @@ function PurchaseMobileCard({ purchase, price, onEdit, onDelete }) {
         </div>
       </div>
       <div className="space-y-1.5">
-        <LabeledRow label="Units">{formatUnits(purchase.units)}</LabeledRow>
+        <LabeledRow label="Units">
+          <span className="flex items-center justify-end">
+            {formatUnits(purchase.units)}
+            {lotsOf(purchase.units, purchase.type) > 1 && (
+              <LotBadge lots={lotsOf(purchase.units, purchase.type)} />
+            )}
+          </span>
+        </LabeledRow>
         <LabeledRow label="Buy price">{formatPrice(purchase.buy_price)}</LabeledRow>
         <LabeledRow label="Invested">{formatRp(investedOf(purchase))}</LabeledRow>
         <LabeledRow label="Value">{formatRp(valueOf(purchase, price))}</LabeledRow>
@@ -85,7 +103,12 @@ function PurchaseDesktopRow({ purchase, price, onEdit, onDelete }) {
   return (
     <div className="hidden grid-cols-8 gap-3 border-b border-border/50 px-3 py-2.5 text-sm last:border-b-0 sm:grid sm:items-center">
       <span className="text-muted-foreground">{formatDate(purchase.date)}</span>
-      <span className="text-right tabular-nums">{formatUnits(purchase.units)}</span>
+      <span className="text-right tabular-nums">
+        {formatUnits(purchase.units)}
+        {lotsOf(purchase.units, purchase.type) > 1 && (
+          <LotBadge lots={lotsOf(purchase.units, purchase.type)} />
+        )}
+      </span>
       <span className="text-right tabular-nums">{formatPrice(purchase.buy_price)}</span>
       <span className="text-right tabular-nums">{formatRp(investedOf(purchase))}</span>
       <span className="text-right font-medium tabular-nums">{formatRp(valueOf(purchase, price))}</span>
@@ -111,8 +134,19 @@ function ExpandedPurchases({ group, price, onAddLot, onEdit, onDelete }) {
         <div>
           <p className="text-sm font-semibold">Purchase history</p>
           <p className="text-xs text-muted-foreground">
-            {group.purchases.length} purchase{group.purchases.length > 1 ? 'es' : ''} · average buy price{' '}
-            {formatPrice(avgBuyPrice(group))}
+            {group.purchases.length} purchase{group.purchases.length > 1 ? 'es' : ''}
+            {lotsOf(group.units, group.type) > 1 && (
+              <>
+                {' '}
+                <span
+                  className="rounded-full bg-accent px-1.5 py-0.5 font-medium text-muted-foreground"
+                  title="1 lot = 100 shares"
+                >
+                  {formatUnits(lotsOf(group.units, group.type))} lots
+                </span>
+              </>
+            )}
+            {' '}· average buy price {formatPrice(avgBuyPrice(group))}
           </p>
         </div>
         <Button variant="outline" size="sm" onClick={() => onAddLot(group)}>
