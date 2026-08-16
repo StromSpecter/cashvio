@@ -23,6 +23,8 @@ import { INVESTMENT_TYPES } from '../../lib/investments'
 
 const formatRp = (n) => `Rp${Number(n || 0).toLocaleString('id-ID')}`
 
+const NO_SOURCE = '__none__'
+
 function AccountOption({ account }) {
   return (
     <div className="flex w-full items-center justify-between gap-2">
@@ -78,7 +80,7 @@ export function EditInvestmentDialog({ investment, open, onOpenChange, onSubmit,
       return
     }
     setError('')
-    const [accountType, accountId] = account ? account.split(':') : [null, null]
+    const [accountType, accountId] = account ? account.split(':') : ['', null]
     onSubmit(investment.id, {
       type,
       name: name.trim(),
@@ -148,27 +150,28 @@ export function EditInvestmentDialog({ investment, open, onOpenChange, onSubmit,
               />
             </div>
           </div>
-          {accounts.length > 0 ? (
-            <div className="space-y-2">
-              <Label htmlFor="edit-inv-account">Source wallet/card/cash</Label>
-              <Select value={account} onValueChange={setAccount}>
-                <SelectTrigger id="edit-inv-account">
-                  <SelectValue placeholder="Select source account" />
-                </SelectTrigger>
-                <SelectContent>
-                  {accounts.map((a) => (
-                    <SelectItem key={a.key} value={a.key} disabled={a.balance <= 0}>
-                      <AccountOption account={a} />
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          ) : (
-            <p className="rounded-md border border-border bg-muted/50 p-3 text-sm text-muted-foreground">
-              No accounts yet. Add a wallet, card, or cash before adding an investment.
+          <div className="space-y-2">
+            <Label htmlFor="edit-inv-account">Source wallet/card/cash (optional)</Label>
+            <Select
+              value={account}
+              onValueChange={(v) => setAccount(v === NO_SOURCE ? '' : v)}
+            >
+              <SelectTrigger id="edit-inv-account">
+                <SelectValue placeholder="No source — historical only" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={NO_SOURCE}>No source — historical only</SelectItem>
+                {accounts.map((a) => (
+                  <SelectItem key={a.key} value={a.key} disabled={a.balance <= 0}>
+                    <AccountOption account={a} />
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">
+              Skip the source for investments already owned. Removing a source also removes its linked expense.
             </p>
-          )}
+          </div>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="edit-inv-units">Units</Label>

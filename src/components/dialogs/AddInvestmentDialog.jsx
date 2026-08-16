@@ -23,6 +23,8 @@ import { INVESTMENT_TYPES } from '../../lib/investments'
 
 const formatRp = (n) => `Rp${Number(n || 0).toLocaleString('id-ID')}`
 
+const NO_SOURCE = '__none__'
+
 function AccountOption({ account }) {
   return (
     <div className="flex w-full items-center justify-between gap-2">
@@ -89,12 +91,8 @@ export function AddInvestmentDialog({ open, onOpenChange, onSubmit, accounts = [
       setError('Buy price must be greater than 0')
       return
     }
-    if (!account) {
-      setError('Please select a source wallet, card, or cash')
-      return
-    }
     setError('')
-    const [accountType, accountId] = account.split(':')
+    const [accountType, accountId] = account ? account.split(':') : [null, null]
     onSubmit({
       type,
       name: name.trim(),
@@ -118,7 +116,7 @@ export function AddInvestmentDialog({ open, onOpenChange, onSubmit, accounts = [
           <DialogDescription>
             {defaults
               ? 'Record a new purchase for this asset. It creates a matching expense in transactions.'
-              : 'Add a new investment. It creates a matching expense in transactions.'}
+              : 'Add a new investment. Add a source account to also record the matching expense in transactions.'}
           </DialogDescription>
         </DialogHeader>
         <form className="space-y-4" onSubmit={handleSubmit}>
@@ -167,27 +165,29 @@ export function AddInvestmentDialog({ open, onOpenChange, onSubmit, accounts = [
               />
             </div>
           </div>
-          {accounts.length > 0 ? (
-            <div className="space-y-2">
-              <Label htmlFor="add-inv-account">Source wallet/card/cash</Label>
-              <Select value={account} onValueChange={setAccount}>
-                <SelectTrigger id="add-inv-account">
-                  <SelectValue placeholder="Select source account" />
-                </SelectTrigger>
-                <SelectContent>
-                  {accounts.map((a) => (
-                    <SelectItem key={a.key} value={a.key} disabled={a.balance <= 0}>
-                      <AccountOption account={a} />
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          ) : (
-            <p className="rounded-md border border-border bg-muted/50 p-3 text-sm text-muted-foreground">
-              No accounts yet. Add a wallet, card, or cash before adding an investment.
+          <div className="space-y-2">
+            <Label htmlFor="add-inv-account">Source wallet/card/cash (optional)</Label>
+            <Select
+              value={account}
+              onValueChange={(v) => setAccount(v === NO_SOURCE ? '' : v)}
+            >
+              <SelectTrigger id="add-inv-account">
+                <SelectValue placeholder="No source — historical only" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={NO_SOURCE}>No source — historical only</SelectItem>
+                {accounts.map((a) => (
+                  <SelectItem key={a.key} value={a.key} disabled={a.balance <= 0}>
+                    <AccountOption account={a} />
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">
+              Choose a source to reduce its balance and record the purchase as an expense.
+              Skip it for investments you already own.
             </p>
-          )}
+          </div>
 
           <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
             Purchase details
@@ -235,7 +235,7 @@ export function AddInvestmentDialog({ open, onOpenChange, onSubmit, accounts = [
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button type="submit" disabled={accounts.length === 0}>
+            <Button type="submit">
               <Plus className="size-4" /> Add Investment
             </Button>
           </DialogFooter>
