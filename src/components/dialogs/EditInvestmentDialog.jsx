@@ -20,10 +20,25 @@ import {
 } from '../ui/select'
 import { INVESTMENT_TYPES } from '../../lib/investments'
 
-export function EditInvestmentDialog({ investment, open, onOpenChange, onSubmit }) {
+const formatRp = (n) => `Rp${Number(n || 0).toLocaleString('id-ID')}`
+
+function AccountOption({ account }) {
+  return (
+    <div className="flex w-full items-center justify-between gap-2">
+      <span className="truncate text-sm font-medium">
+        {account.label}
+        <span className="text-xs font-normal text-muted-foreground"> · {formatRp(account.balance)}</span>
+      </span>
+    </div>
+  )
+}
+
+export function EditInvestmentDialog({ investment, open, onOpenChange, onSubmit, accounts = [] }) {
   const [type, setType] = useState('stock')
   const [name, setName] = useState('')
   const [ticker, setTicker] = useState('')
+  const [app, setApp] = useState('')
+  const [account, setAccount] = useState('')
   const [currentPrice, setCurrentPrice] = useState('')
   const [error, setError] = useState('')
   const [prevInvestment, setPrevInvestment] = useState(null)
@@ -33,6 +48,12 @@ export function EditInvestmentDialog({ investment, open, onOpenChange, onSubmit 
     setType(investment ? investment.type || 'stock' : 'stock')
     setName(investment ? investment.name || '' : '')
     setTicker(investment ? investment.ticker || '' : '')
+    setApp(investment ? investment.app || '' : '')
+    setAccount(
+      investment && investment.account_type && investment.account_id
+        ? `${investment.account_type}:${investment.account_id}`
+        : ''
+    )
     setCurrentPrice(investment ? String(investment.current_price ?? '') : '')
     setError('')
   }
@@ -48,10 +69,14 @@ export function EditInvestmentDialog({ investment, open, onOpenChange, onSubmit 
       return
     }
     setError('')
+    const [accountType, accountId] = account ? account.split(':') : [null, null]
     onSubmit(investment.id, {
       type,
       name: name.trim(),
       ticker: ticker.trim().toUpperCase() || '—',
+      app: app.trim(),
+      account_type: accountType,
+      account_id: accountId,
       current_price: parseFloat(currentPrice),
     })
     onOpenChange(false)
@@ -92,15 +117,47 @@ export function EditInvestmentDialog({ investment, open, onOpenChange, onSubmit 
               required
             />
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="edit-inv-ticker">Ticker / code</Label>
-            <Input
-              id="edit-inv-ticker"
-              placeholder="e.g. BBCA"
-              value={ticker}
-              onChange={(e) => setTicker(e.target.value)}
-            />
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="edit-inv-ticker">Ticker / code</Label>
+              <Input
+                id="edit-inv-ticker"
+                placeholder="e.g. BBCA"
+                value={ticker}
+                onChange={(e) => setTicker(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-inv-app">Investment app</Label>
+              <Input
+                id="edit-inv-app"
+                placeholder="e.g. GoTrade, Ajaib, Bibit"
+                value={app}
+                onChange={(e) => setApp(e.target.value)}
+              />
+            </div>
           </div>
+          {accounts.length > 0 ? (
+            <div className="space-y-2">
+              <Label htmlFor="edit-inv-account">Source wallet/card/cash</Label>
+              <Select value={account} onValueChange={setAccount}>
+                <SelectTrigger id="edit-inv-account">
+                  <SelectValue placeholder="Select source account" />
+                </SelectTrigger>
+                <SelectContent>
+                  {accounts.map((a) => (
+                    <SelectItem key={a.key} value={a.key} disabled={a.balance <= 0}>
+                      <AccountOption account={a} />
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          ) : (
+            <p className="rounded-md border border-border bg-muted/50 p-3 text-sm text-muted-foreground">
+              No accounts yet. Add a wallet, card, or cash before adding an investment.
+            </p>
+          )}
           <div className="space-y-2">
             <Label htmlFor="edit-inv-current-price">Current price</Label>
             <Input

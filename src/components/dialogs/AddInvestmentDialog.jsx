@@ -21,10 +21,25 @@ import {
 import { DatePicker } from '../ui/datepicker'
 import { INVESTMENT_TYPES } from '../../lib/investments'
 
-export function AddInvestmentDialog({ open, onOpenChange, onSubmit }) {
+const formatRp = (n) => `Rp${Number(n || 0).toLocaleString('id-ID')}`
+
+function AccountOption({ account }) {
+  return (
+    <div className="flex w-full items-center justify-between gap-2">
+      <span className="truncate text-sm font-medium">
+        {account.label}
+        <span className="text-xs font-normal text-muted-foreground"> · {formatRp(account.balance)}</span>
+      </span>
+    </div>
+  )
+}
+
+export function AddInvestmentDialog({ open, onOpenChange, onSubmit, accounts = [] }) {
   const [type, setType] = useState('stock')
   const [name, setName] = useState('')
   const [ticker, setTicker] = useState('')
+  const [app, setApp] = useState('')
+  const [account, setAccount] = useState('')
   const [units, setUnits] = useState('')
   const [buyPrice, setBuyPrice] = useState('')
   const [currentPrice, setCurrentPrice] = useState('')
@@ -35,6 +50,8 @@ export function AddInvestmentDialog({ open, onOpenChange, onSubmit }) {
     setType('stock')
     setName('')
     setTicker('')
+    setApp('')
+    setAccount('')
     setUnits('')
     setBuyPrice('')
     setCurrentPrice('')
@@ -60,11 +77,19 @@ export function AddInvestmentDialog({ open, onOpenChange, onSubmit }) {
       setError('Current price must be greater than 0')
       return
     }
+    if (!account) {
+      setError('Please select a source wallet, card, or cash')
+      return
+    }
     setError('')
+    const [accountType, accountId] = account.split(':')
     onSubmit({
       type,
       name: name.trim(),
       ticker: ticker.trim().toUpperCase() || '—',
+      app: app.trim(),
+      account_type: accountType,
+      account_id: accountId,
       current_price: parseFloat(currentPrice),
       lot: {
         units: parseFloat(units),
@@ -111,15 +136,47 @@ export function AddInvestmentDialog({ open, onOpenChange, onSubmit }) {
               required
             />
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="add-inv-ticker">Ticker / code</Label>
-            <Input
-              id="add-inv-ticker"
-              placeholder="e.g. BBCA"
-              value={ticker}
-              onChange={(e) => setTicker(e.target.value)}
-            />
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="add-inv-ticker">Ticker / code</Label>
+              <Input
+                id="add-inv-ticker"
+                placeholder="e.g. BBCA"
+                value={ticker}
+                onChange={(e) => setTicker(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="add-inv-app">Investment app</Label>
+              <Input
+                id="add-inv-app"
+                placeholder="e.g. GoTrade, Ajaib, Bibit"
+                value={app}
+                onChange={(e) => setApp(e.target.value)}
+              />
+            </div>
           </div>
+          {accounts.length > 0 ? (
+            <div className="space-y-2">
+              <Label htmlFor="add-inv-account">Source wallet/card/cash</Label>
+              <Select value={account} onValueChange={setAccount}>
+                <SelectTrigger id="add-inv-account">
+                  <SelectValue placeholder="Select source account" />
+                </SelectTrigger>
+                <SelectContent>
+                  {accounts.map((a) => (
+                    <SelectItem key={a.key} value={a.key} disabled={a.balance <= 0}>
+                      <AccountOption account={a} />
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          ) : (
+            <p className="rounded-md border border-border bg-muted/50 p-3 text-sm text-muted-foreground">
+              No accounts yet. Add a wallet, card, or cash before adding an investment.
+            </p>
+          )}
 
           <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
             Purchase lot
@@ -181,7 +238,7 @@ export function AddInvestmentDialog({ open, onOpenChange, onSubmit }) {
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button type="submit">
+            <Button type="submit" disabled={accounts.length === 0}>
               <Plus className="size-4" /> Add Investment
             </Button>
           </DialogFooter>

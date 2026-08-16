@@ -16,6 +16,9 @@ export function InvestmentProvider({ children }) {
       type: data.type,
       name: data.name,
       ticker: data.ticker,
+      app: data.app || '',
+      account_type: data.account_type || null,
+      account_id: data.account_id || null,
       current_price: data.current_price,
       buy_date: lot ? lot.buy_date : undefined,
       lots: [
@@ -39,6 +42,9 @@ export function InvestmentProvider({ children }) {
               type: data.type,
               name: data.name,
               ticker: data.ticker,
+              app: data.app || '',
+              account_type: data.account_type || null,
+              account_id: data.account_id || null,
               current_price: data.current_price,
             }
           : i

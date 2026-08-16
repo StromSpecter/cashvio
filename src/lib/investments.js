@@ -17,35 +17,35 @@ export const INVESTMENT_TYPES = Object.entries(typeMeta).map(([value, meta]) => 
 }))
 
 const seedInvestments = [
-  { id: 'seed-1', type: 'stock', name: 'Bank Central Asia', ticker: 'BBCA', current_price: 10250, lots: [
+  { id: 'seed-1', type: 'stock', name: 'Bank Central Asia', ticker: 'BBCA', app: 'GoTrade', current_price: 10250, lots: [
     { id: 'lot-1a', units: 80, buy_price: 9400, buy_date: '2026-01-10' },
     { id: 'lot-1b', units: 40, buy_price: 10200, buy_date: '2026-04-15' },
   ] },
-  { id: 'seed-2', type: 'stock', name: 'Bank Rakyat Indonesia', ticker: 'BBRI', current_price: 4850, lots: [
+  { id: 'seed-2', type: 'stock', name: 'Bank Rakyat Indonesia', ticker: 'BBRI', app: 'GoTrade', current_price: 4850, lots: [
     { id: 'lot-2a', units: 300, buy_price: 4400, buy_date: '2026-02-14' },
     { id: 'lot-2b', units: 200, buy_price: 5050, buy_date: '2026-06-20' },
   ] },
-  { id: 'seed-3', type: 'stock', name: 'Telkom Indonesia', ticker: 'TLKM', current_price: 2780, lots: [
+  { id: 'seed-3', type: 'stock', name: 'Telkom Indonesia', ticker: 'TLKM', app: 'Ajaib', current_price: 2780, lots: [
     { id: 'lot-3a', units: 300, buy_price: 2900, buy_date: '2026-03-02' },
   ] },
-  { id: 'seed-4', type: 'stock', name: 'Aneka Tambang', ticker: 'ANTM', current_price: 1540, lots: [
+  { id: 'seed-4', type: 'stock', name: 'Aneka Tambang', ticker: 'ANTM', app: 'Ajaib', current_price: 1540, lots: [
     { id: 'lot-4a', units: 1000, buy_price: 1600, buy_date: '2026-04-20' },
   ] },
-  { id: 'seed-5', type: 'crypto', name: 'Bitcoin', ticker: 'BTC', current_price: 1100000000, lots: [
+  { id: 'seed-5', type: 'crypto', name: 'Bitcoin', ticker: 'BTC', app: 'Indodax', current_price: 1100000000, lots: [
     { id: 'lot-5a', units: 0.01, buy_price: 880000000, buy_date: '2025-11-05' },
     { id: 'lot-5b', units: 0.01, buy_price: 1020000000, buy_date: '2026-02-01' },
   ] },
-  { id: 'seed-6', type: 'crypto', name: 'Ethereum', ticker: 'ETH', current_price: 49500000, lots: [
+  { id: 'seed-6', type: 'crypto', name: 'Ethereum', ticker: 'ETH', app: 'Indodax', current_price: 49500000, lots: [
     { id: 'lot-6a', units: 0.35, buy_price: 42000000, buy_date: '2025-12-12' },
   ] },
-  { id: 'seed-7', type: 'mutual_fund', name: 'Reksa Dana Syariah', ticker: 'RDSY', current_price: 1180, lots: [
+  { id: 'seed-7', type: 'mutual_fund', name: 'Reksa Dana Syariah', ticker: 'RDSY', app: 'Bibit', current_price: 1180, lots: [
     { id: 'lot-7a', units: 10000, buy_price: 1050, buy_date: '2026-01-25' },
     { id: 'lot-7b', units: 5000, buy_price: 1150, buy_date: '2026-05-03' },
   ] },
-  { id: 'seed-8', type: 'gold', name: 'Antam Gold', ticker: 'ANTAM', current_price: 1450000, lots: [
+  { id: 'seed-8', type: 'gold', name: 'Antam Gold', ticker: 'ANTAM', app: 'Treasury', current_price: 1450000, lots: [
     { id: 'lot-8a', units: 10, buy_price: 1200000, buy_date: '2026-05-08' },
   ] },
-  { id: 'seed-9', type: 'bond', name: 'Obligasi Ritel Indonesia', ticker: 'ORI024', current_price: 1020000, lots: [
+  { id: 'seed-9', type: 'bond', name: 'Obligasi Ritel Indonesia', ticker: 'ORI024', app: 'Treasury', current_price: 1020000, lots: [
     { id: 'lot-9a', units: 5, buy_price: 1000000, buy_date: '2026-06-15' },
   ] },
 ]
@@ -53,6 +53,11 @@ const seedInvestments = [
 // Normalize legacy records (flat units/buy_price) into lot-based assets.
 export const normalizeInvestment = (raw) => {
   if (!raw) return null
+  const base = {
+    app: raw.app || '',
+    account_type: raw.account_type || null,
+    account_id: raw.account_id || null,
+  }
   if (Array.isArray(raw.lots)) {
     return {
       id: raw.id,
@@ -61,6 +66,7 @@ export const normalizeInvestment = (raw) => {
       ticker: raw.ticker || '—',
       current_price: raw.current_price || 0,
       buy_date: raw.buy_date,
+      ...base,
       lots: raw.lots.map((lot, i) => ({
         id: lot.id || `${raw.id}-lot-${i}`,
         units: lot.units || 0,
@@ -76,6 +82,7 @@ export const normalizeInvestment = (raw) => {
     ticker: raw.ticker || '—',
     current_price: raw.current_price || 0,
     buy_date: raw.buy_date,
+    ...base,
     lots: [
       {
         id: `${raw.id}-lot-0`,

@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useCallback, useRef, useEffect } from 'react'
 import { Search, Plus, MoreHorizontal, Pencil, Trash2, Layers, Wallet, TrendingUp, Percent, ArrowUpRight, ArrowDownRight, ChartPie, PackagePlus } from 'lucide-react'
 import { Button } from '../../components/ui/button'
 import { Input } from '../../components/ui/input'
@@ -19,6 +19,8 @@ import { DeleteInvestmentDialog } from '../../components/dialogs/DeleteInvestmen
 import { AddLotDialog } from '../../components/dialogs/AddLotDialog'
 import { DeleteLotDialog } from '../../components/dialogs/DeleteLotDialog'
 import { useInvestments } from '../../lib/investment-context'
+import { getWallets, getCards, getCash } from '../../lib/api'
+import { toast } from '../../lib/toast.js'
 import {
   typeMeta,
   formatRp,
@@ -224,6 +226,39 @@ export function InvestmentsPage() {
   const [addLotTarget, setAddLotTarget] = useState(null)
   const [deleteLotTarget, setDeleteLotTarget] = useState(null)
   const [query, setQuery] = useState('')
+  const [wallets, setWallets] = useState([])
+  const [cards, setCards] = useState([])
+  const [cash, setCash] = useState(null)
+  const fetchedRef = useRef(false)
+
+  const fetchAccounts = useCallback(async () => {
+    const [wRes, cRes, cashRes] = await Promise.all([
+      getWallets({ limit: 100 }),
+      getCards({ limit: 100 }),
+      getCash(),
+    ])
+    return { wallets: wRes.data, cards: cRes.data, cash: cashRes.data }
+  }, [])
+
+  useEffect(() => {
+    if (fetchedRef.current) return
+    fetchedRef.current = true
+    fetchAccounts()
+      .then(({ wallets, cards, cash }) => {
+        setWallets(wallets)
+        setCards(cards)
+        setCash(cash)
+      })
+      .catch((e) => toast.error(e.message))
+  }, [fetchAccounts])
+
+  const accounts = useMemo(() => {
+    return [
+      ...wallets.map((w) => ({ key: `wallet:${w.id}`, label: w.name, balance: w.balance_idr })),
+      ...cards.map((c) => ({ key: `card:${c.id}`, label: c.bank, balance: c.balance_idr })),
+      ...(cash ? [{ key: `cash:${cash.id}`, label: 'Cash', balance: cash.balance_idr }] : []),
+    ]
+  }, [wallets, cards, cash])
 
   const totals = useMemo(() => {
     const invested = investments.reduce((sum, i) => sum + investedOf(i), 0)
@@ -287,7 +322,10 @@ export function InvestmentsPage() {
             </Avatar>
             <div className="min-w-0">
               <p className="font-medium truncate">{value}</p>
-              <p className="text-xs text-muted-foreground truncate">{row.ticker}</p>
+              <p className="text-xs text-muted-foreground truncate">
+                {row.ticker}
+                {row.app ? ` · ${row.app}` : ''}
+              </p>
             </div>
           </div>
         )
@@ -366,7 +404,8 @@ export function InvestmentsPage() {
         (i) =>
           !q ||
           i.name.toLowerCase().includes(q) ||
-          i.ticker.toLowerCase().includes(q)
+          i.ticker.toLowerCase().includes(q) ||
+          (i.app || '').toLowerCase().includes(q)
       )
   }, [investments, query])
 
@@ -463,6 +502,7 @@ export function InvestmentsPage() {
         open={addOpen}
         onOpenChange={setAddOpen}
         onSubmit={handleAdd}
+        accounts={accounts}
       />
       <EditInvestmentDialog
         open={!!editTarget}
@@ -471,6 +511,7 @@ export function InvestmentsPage() {
         }}
         investment={editTarget}
         onSubmit={handleEdit}
+        accounts={accounts}
       />
       <DeleteInvestmentDialog
         open={!!deleteTarget}
