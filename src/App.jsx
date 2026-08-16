@@ -10,6 +10,8 @@ import { TransactionsPage } from "./pages/dashboard/TransactionsPage"
 import { TransfersPage } from "./pages/dashboard/TransfersPage"
 import { RequireAuth, GuestRoute } from "./lib/auth.jsx"
 import { CashPage } from "./pages/dashboard/CashPage.jsx"
+import { InvestmentsPage } from "./pages/dashboard/InvestmentsPage.jsx"
+import PortfolioPage from "./pages/dashboard/PortfolioPage.jsx"
 
 function App() {
   return (
@@ -47,6 +49,8 @@ function App() {
           <Route path="/dashboard/cards" element={<CardsPage />} />
           <Route path="/dashboard/transactions" element={<TransactionsPage />} />
           <Route path="/dashboard/transfers" element={<TransfersPage />} />
+          <Route path="/dashboard/investments" element={<InvestmentsPage />} />
+          <Route path="/dashboard/portfolio" element={<PortfolioPage />} />
         </Route>
 
         <Route path="*" element={<Navigate to="/signin" replace />} />

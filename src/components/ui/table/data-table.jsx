@@ -1,5 +1,5 @@
-import { forwardRef, useState, useMemo, useEffect } from 'react'
-import { ArrowDown, ArrowUp, ArrowUpDown, Search } from 'lucide-react'
+import { forwardRef, Fragment, useState, useMemo, useEffect } from 'react'
+import { ArrowDown, ArrowUp, ArrowUpDown, ChevronRight, ChevronDown, Search } from 'lucide-react'
 import { cn } from '../../../lib/utils.js'
 import {
   Table,
@@ -41,6 +41,8 @@ const DataTable = forwardRef(
       showActions = false,
       actions,
       actionsHeader = 'Actions',
+      renderExpanded,
+      expandedKey = 'id',
       onSortChange,
       className,
       ...props
@@ -51,6 +53,16 @@ const DataTable = forwardRef(
     const [searches, setSearches] = useState({})
     const [page, setPage] = useState(1)
     const [size, setSize] = useState(pageSize)
+    const [expandedIds, setExpandedIds] = useState(() => new Set())
+
+    const toggleExpanded = (id) => {
+      setExpandedIds((prev) => {
+        const next = new Set(prev)
+        if (next.has(id)) next.delete(id)
+        else next.add(id)
+        return next
+      })
+    }
 
     const handleSort = (key) => {
       const next = !sort || sort.key !== key
@@ -126,6 +138,9 @@ const DataTable = forwardRef(
         <Table>
           <TableHeader>
             <TableRow>
+              {renderExpanded && (
+                <TableHead className="w-10" aria-hidden="true" />
+              )}
               {columns.map((column) => (
                 <TableHead
                   key={column.key}
@@ -191,33 +206,68 @@ const DataTable = forwardRef(
             {visibleRows.length === 0 ? (
               <TableRow>
                 <TableCell
-                  colSpan={columns.length + (showActions ? 1 : 0)}
+                  colSpan={columns.length + (showActions ? 1 : 0) + (renderExpanded ? 1 : 0)}
                   className="h-24 text-center text-muted-foreground"
                 >
                   {emptyMessage}
                 </TableCell>
               </TableRow>
             ) : (
-              visibleRows.map((row, index) => (
-                <TableRow key={row.id ?? index}>
-                  {columns.map((column) => {
-                    const value = getValue(row, column)
-                    return (
-                      <TableCell
-                        key={column.key}
-                        className={cn(getAlign(column), "overflow-hidden text-nowrap")}
-                      >
-                        {column.render ? column.render(value, row) : value}
-                      </TableCell>
-                    )
-                  })}
-                  {showActions && (
-                    <TableCell className="whitespace-nowrap text-right">
-                      {actions ? actions(row) : null}
-                    </TableCell>
-                  )}
-                </TableRow>
-              ))
+              visibleRows.map((row, index) => {
+                const rowKey = row[expandedKey] ?? index
+                const isExpanded = expandedIds.has(rowKey)
+                return (
+                  <Fragment key={rowKey}>
+                    <TableRow className={cn(isExpanded && 'bg-accent/40')}>
+                      {renderExpanded && (
+                        <TableCell className="w-10">
+                          <button
+                            type="button"
+                            onClick={() => toggleExpanded(rowKey)}
+                            aria-label={isExpanded ? 'Collapse row' : 'Expand row'}
+                            aria-expanded={isExpanded}
+                            className="inline-flex items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                          >
+                            {isExpanded ? (
+                              <ChevronDown className="size-4" />
+                            ) : (
+                              <ChevronRight className="size-4" />
+                            )}
+                          </button>
+                        </TableCell>
+                      )}
+                      {columns.map((column) => {
+                        const value = getValue(row, column)
+                        return (
+                          <TableCell
+                            key={column.key}
+                            className={cn(getAlign(column), "overflow-hidden text-nowrap")}
+                          >
+                            {column.render ? column.render(value, row) : value}
+                          </TableCell>
+                        )
+                      })}
+                      {showActions && (
+                        <TableCell className="whitespace-nowrap text-right">
+                          {actions ? actions(row) : null}
+                        </TableCell>
+                      )}
+                    </TableRow>
+                    {renderExpanded && isExpanded && (
+                      <TableRow>
+                        <TableCell
+                          colSpan={
+                            columns.length + (showActions ? 1 : 0) + 1
+                          }
+                          className="bg-accent/30 p-0"
+                        >
+                          {renderExpanded(row)}
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </Fragment>
+                )
+              })
             )}
           </TableBody>
         </Table>
