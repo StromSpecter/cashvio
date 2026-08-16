@@ -146,7 +146,7 @@ function ExpandedPurchases({ group, price, onAddLot, onEdit, onDelete }) {
                 </span>
               </>
             )}
-            {' '}· average buy price {formatPrice(avgBuyPrice(group))}
+            {' '}· Total invested {formatRp(investedOf(group))}
           </p>
         </div>
         <Button variant="outline" size="sm" onClick={() => onAddLot(group)}>
