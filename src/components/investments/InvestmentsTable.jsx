@@ -27,6 +27,7 @@ import {
   groupValue,
   groupGain,
   groupGainPct,
+  lotsOf,
 } from '../../lib/investments'
 
 function GainText({ value, pct }) {
@@ -212,19 +213,22 @@ export function InvestmentsTable({
       header: 'Units',
       sortable: true,
       align: 'right',
-      render: (value, row) => (
-        <span className="tabular-nums">
-          {formatUnits(value)}
-          {row.purchases.length > 1 && (
-            <span
-              className="ml-1.5 rounded-full bg-accent px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground"
-              title={`${row.purchases.length} purchase lots`}
-            >
-              {row.purchases.length} lots
-            </span>
-          )}
-        </span>
-      ),
+      render: (value, row) => {
+        const lots = lotsOf(value, row.type)
+        return (
+          <span className="tabular-nums">
+            {formatUnits(value)}
+            {lots > 1 && (
+              <span
+                className="ml-1.5 rounded-full bg-accent px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground"
+                title="1 lot = 100 shares"
+              >
+                {formatUnits(lots)} lots
+              </span>
+            )}
+          </span>
+        )
+      },
     },
     {
       key: 'avg',

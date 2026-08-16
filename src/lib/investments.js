@@ -24,6 +24,11 @@ export const formatRpSigned = (n) => {
 export const formatUnits = (n) =>
   Number(n || 0).toLocaleString('id-ID', { maximumFractionDigits: 4 })
 
+export const lotsOf = (units, type) => {
+  if (type !== 'stock' || !(Number(units) > 0)) return null
+  return Number(units) / 100
+}
+
 export const formatPrice = (n) => formatRp(n)
 
 export const formatDate = (value) => {
