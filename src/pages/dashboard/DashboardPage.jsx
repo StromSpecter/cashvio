@@ -22,6 +22,7 @@ import {
   Landmark,
   Download,
   TrendingUp,
+  Repeat,
 } from 'lucide-react'
 import { Button } from '../../components/ui/button'
 import { Badge } from '../../components/ui/badge'
@@ -78,6 +79,7 @@ const categoryMeta = {
   entertainment: { icon: Clapperboard, tone: 'text-red-600' },
   salary: { icon: Landmark, tone: 'text-emerald-600' },
   investment: { icon: TrendingUp, tone: 'text-violet-600' },
+  subscription: { icon: Repeat, tone: 'text-purple-600' },
 }
 
 const cardGradients = [

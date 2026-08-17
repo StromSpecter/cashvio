@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, useCallback, useRef } from 'react'
-import { Search, Download, Plus, ArrowDownToLine, ArrowLeftRight, Store, ShoppingCart, Briefcase, Repeat, Globe, Laptop, Gift, BadgeDollarSign, UtensilsCrossed, Car, Home, Cat, Clapperboard, HeartPulse, GraduationCap, TrendingUp, MoreHorizontal, Pencil, Trash2 } from 'lucide-react'
+import { Search, Download, Plus, ArrowDownToLine, ArrowLeftRight, Store, ShoppingCart, Briefcase, Repeat, Globe, Laptop, Gift, BadgeDollarSign, UtensilsCrossed, Car, Home, Cat, Clapperboard, HeartPulse, GraduationCap, MoreHorizontal, Pencil, Trash2 } from 'lucide-react'
 import { Button } from '../../components/ui/button'
 import { Badge } from '../../components/ui/badge'
 import { Input } from '../../components/ui/input'
@@ -57,14 +57,13 @@ const categories = {
   entertainment: { label: 'Entertainment', icon: Clapperboard, tone: 'text-red-600' },
   health: { label: 'Health', icon: HeartPulse, tone: 'text-emerald-600' },
   education: { label: 'Education', icon: GraduationCap, tone: 'text-indigo-600' },
-  investment: { label: 'Investment', icon: TrendingUp, tone: 'text-violet-600' },
+  subscription: { label: 'Subscription', icon: Repeat, tone: 'text-purple-600' },
 }
 
 const categoryLegacy = {
   income: { label: 'Income', icon: ArrowDownToLine, tone: 'text-emerald-600' },
   transfer: { label: 'Transfer', icon: ArrowLeftRight, tone: 'text-zinc-600' },
   groceries: { label: 'Groceries', icon: Store, tone: 'text-amber-600' },
-  subscription: { label: 'Subscription', icon: Repeat, tone: 'text-purple-600' },
   travel: { label: 'Travel', icon: Globe, tone: 'text-cyan-600' },
 }
 
@@ -457,7 +456,7 @@ export function TransactionsPage() {
                 <SelectItem value="entertainment">Entertainment</SelectItem>
                 <SelectItem value="health">Health</SelectItem>
                 <SelectItem value="education">Education</SelectItem>
-                <SelectItem value="investment">Investment</SelectItem>
+                <SelectItem value="subscription">Subscription</SelectItem>
               </SelectContent>
             </Select>
             <Select value={status} onValueChange={setStatus}>
