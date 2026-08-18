@@ -41,7 +41,7 @@ const formatUnitsWithLabel = (units, type) => `${formatUnits(units)}${type === '
 function GainText({ value, pct }) {
   return (
     <span
-      className={`flex items-center justify-end gap-1 font-medium tabular-nums ${
+      className={`flex items-center justify-start gap-1 font-medium tabular-nums ${
         value >= 0 ? 'text-emerald-600' : 'text-red-600'
       }`}
     >
@@ -314,7 +314,6 @@ export function InvestmentsTable({
       key: 'gain',
       header: 'Return',
       sortable: true,
-      align: 'right',
       width: 'min-w-[130px]',
       render: (value, row) => <GainText value={value} pct={groupGainPct(row, assetPrice(row, prices))} />,
     },
@@ -334,6 +333,7 @@ export function InvestmentsTable({
       data={rows}
       pageSize={10}
       showActions
+      actionsWidth="w-[52px]"
       actions={(row) => (
         <GroupActions
           onAddLot={() => onAddLot(row)}

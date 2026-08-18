@@ -41,6 +41,7 @@ const DataTable = forwardRef(
       showActions = false,
       actions,
       actionsHeader = 'Actions',
+      actionsWidth = 'w-[80px]',
       renderExpanded,
       expandedKey = 'id',
       onSortChange,
@@ -193,7 +194,7 @@ const DataTable = forwardRef(
               ))}
 
               {showActions && (
-                <TableHead className="w-[80px] text-right">
+                <TableHead className={cn(actionsWidth, 'text-right')}>
                   <span className="inline-flex items-center justify-end font-medium text-muted-foreground">
                     {actionsHeader}
                   </span>
