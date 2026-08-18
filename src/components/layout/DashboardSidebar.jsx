@@ -15,6 +15,7 @@ import {
   CircleDollarSign,
 } from "lucide-react";
 import { useAuth } from "../../lib/auth-context.js";
+import alurkaskuLogo from "../../../public/alurkasku.svg";
 
 const navSections = [
   {
@@ -65,7 +66,9 @@ export function DashboardSidebar() {
           to="/dashboard"
           className="flex items-center gap-2 text-lg font-semibold tracking-tight"
         >
-          <Wallet className="size-5" />
+          <div className="w-5 h-5 flex items-center justify-center">
+            <img src={alurkaskuLogo} alt="Alurkasku" className="w-full h-full" />
+          </div>
           Alurkasku
         </NavLink>
       </div>
