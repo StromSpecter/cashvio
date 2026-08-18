@@ -237,7 +237,7 @@ export function InvestmentsPage() {
       <div className="flex flex-col gap-2 rounded-lg border border-border bg-muted/50 px-4 py-2.5 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
         <span className="flex items-center gap-2">
           <RefreshCw className="size-3.5 shrink-0" />
-          Harga saham (IDX) diperbarui otomatis setiap hari pukul 17.00–23.59 WIB dari goapi.io.
+          Harga saham (IDX) diperbarui otomatis setiap hari pukul 17.00–23.59 WIB.
         </span>
         <Button
           variant="ghost"
