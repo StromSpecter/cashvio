@@ -10,7 +10,7 @@ jobs:
     permissions:
       contents: read
     env:
-      VITE_API_URL: http://195.35.45.234
+      VITE_API_URL: /
     steps:
       - uses: actions/checkout@v4
 
