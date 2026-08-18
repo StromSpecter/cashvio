@@ -109,7 +109,7 @@ function PurchaseMobileCard({ purchase, price, onEdit, onDelete }) {
 
 function PurchaseDesktopRow({ purchase, price, onEdit, onDelete }) {
   return (
-    <div className="hidden grid-cols-8 gap-3 border-b border-border/50 px-3 py-2.5 text-sm last:border-b-0 sm:grid sm:items-center">
+    <div className="hidden grid-cols-7 gap-3 border-b border-border/50 px-3 py-2.5 text-sm last:border-b-0 sm:grid sm:items-center">
       <span className="text-muted-foreground">{formatDate(purchase.date)}</span>
       <span className="text-right tabular-nums">
         {formatUnitsWithLabel(purchase.units, purchase.type)}
@@ -121,12 +121,10 @@ function PurchaseDesktopRow({ purchase, price, onEdit, onDelete }) {
       <span className="text-right tabular-nums">{formatRp(investedOf(purchase))}</span>
       <span className="text-right font-medium tabular-nums">{formatRp(valueOf(purchase, price))}</span>
       <GainText value={gainOf(purchase, price)} pct={gainPctOf(purchase, price)} />
-      <span className="text-right">
+      <span className="flex items-center justify-end gap-1">
         <Button variant="ghost" size="icon" className="size-7 text-muted-foreground" aria-label="Edit purchase" onClick={() => onEdit(purchase)}>
           <Pencil className="size-4" />
         </Button>
-      </span>
-      <span className="text-right">
         <Button variant="ghost" size="icon" className="size-7 text-muted-foreground hover:text-destructive" aria-label="Delete purchase" onClick={() => onDelete(purchase)}>
           <Trash2 className="size-4" />
         </Button>
@@ -162,15 +160,14 @@ function ExpandedPurchases({ group, price, onAddLot, onEdit, onDelete }) {
         </Button>
       </div>
       <div className="mt-3 overflow-hidden rounded-lg border border-border">
-        <div className="hidden grid-cols-8 gap-3 border-b border-border bg-accent/50 px-3 py-2 text-xs font-medium text-muted-foreground sm:grid">
+        <div className="hidden grid-cols-7 gap-3 border-b border-border bg-accent/50 px-3 py-2 text-xs font-medium text-muted-foreground sm:grid">
           <span>Date</span>
           <span className="text-right">Units</span>
           <span className="text-right">Buy price</span>
           <span className="text-right">Invested</span>
           <span className="text-right">Value</span>
           <span className="text-right">Gain</span>
-          <span />
-          <span />
+          <span className="text-right"><span className="sr-only">Actions</span></span>
         </div>
         {group.purchases.map((p) => (
           <div key={p.id}>
