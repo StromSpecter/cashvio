@@ -328,8 +328,6 @@ investments.map((i) => ({
                     data={allocation.map(({ key, label, value }) => ({ key, label, value }))}
                     innerRadius={70}
                     showLegend={false}
-                    centerValue={formatRp(totals.value)}
-                    centerLabel="Total Value"
                   />
                 </ChartContainer>
                 <div className="mt-4 space-y-2">

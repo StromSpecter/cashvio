@@ -1,12 +1,12 @@
 import { TrendingUp, Briefcase, Landmark, Coins, Bitcoin, Globe } from 'lucide-react'
 
 export const typeMeta = {
-  stock: { label: 'Stocks', icon: TrendingUp, color: 'var(--color-chart-1)' },
-  mutual_fund: { label: 'Mutual Funds', icon: Briefcase, color: 'var(--color-chart-2)' },
-  bond: { label: 'Bonds', icon: Landmark, color: 'var(--color-chart-3)' },
-  gold: { label: 'Gold', icon: Coins, color: 'var(--color-chart-4)' },
+  stock: { label: 'Stocks', icon: TrendingUp, color: 'var(--color-chart-2)' },
+  mutual_fund: { label: 'Mutual Funds', icon: Briefcase, color: 'var(--color-chart-4)' },
+  bond: { label: 'Bonds', icon: Landmark, color: 'var(--color-chart-7)' },
+  gold: { label: 'Gold', icon: Coins, color: 'var(--color-chart-3)' },
   crypto: { label: 'Crypto', icon: Bitcoin, color: 'var(--color-chart-5)' },
-  forex: { label: 'Forex', icon: Globe, color: '#0ea5e9' },
+  forex: { label: 'Forex', icon: Globe, color: 'var(--color-chart-6)' },
 }
 
 export const INVESTMENT_TYPES = Object.entries(typeMeta).map(([value, meta]) => ({
