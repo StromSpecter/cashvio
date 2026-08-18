@@ -90,12 +90,38 @@ const cardGradients = [
 ]
 
 const spendingPalette = [
-  'var(--color-chart-1)',
   'var(--color-chart-2)',
   'var(--color-chart-3)',
   'var(--color-chart-4)',
   'var(--color-chart-5)',
+  'var(--color-chart-6)',
+  'var(--color-chart-7)',
+  'var(--color-chart-8)',
+  'var(--color-chart-9)',
+  'var(--color-chart-10)',
 ]
+
+const spendingCategoryColors = {
+  food: 'var(--color-chart-2)',
+  salary: 'var(--color-chart-2)',
+  income: 'var(--color-chart-2)',
+  housing: 'var(--color-chart-7)',
+  transportation: 'var(--color-chart-4)',
+  transport: 'var(--color-chart-4)',
+  travel: 'var(--color-chart-4)',
+  shopping: 'var(--color-chart-3)',
+  groceries: 'var(--color-chart-3)',
+  bonus: 'var(--color-chart-9)',
+  entertainment: 'var(--color-chart-6)',
+  health: 'var(--color-chart-5)',
+  investment: 'var(--color-chart-5)',
+  education: 'var(--color-chart-8)',
+  gift: 'var(--color-chart-8)',
+  freelance: 'var(--color-chart-4)',
+  pets: 'var(--color-chart-9)',
+  subscription: 'var(--color-chart-10)',
+  transfer: 'var(--color-chart-9)',
+}
 
 const statusVariant = {
   completed: 'success',
@@ -395,14 +421,24 @@ export function DashboardPage() {
   const currentBalance = overview?.balance_overview?.[range] || []
   const spendingData = useMemo(() => {
     const colors = [...spendingPalette]
-    return (overview?.spending || []).map((s, i) => ({
-      key: s.category,
-      label: s.label,
-      value: s.amount,
-      amount: s.amount,
-      percentage: s.percentage,
-      color: colors[i % colors.length],
-    }))
+    const fallback = new Map()
+    let next = 0
+    return (overview?.spending || []).map((s) => {
+      const key = s.category
+      let color = spendingCategoryColors[key]
+      if (!color) {
+        if (!fallback.has(key)) fallback.set(key, colors[next++ % colors.length])
+        color = fallback.get(key)
+      }
+      return {
+        key,
+        label: s.label,
+        value: s.amount,
+        amount: s.amount,
+        percentage: s.percentage,
+        color,
+      }
+    })
   }, [overview])
 
   const spendingConfig = Object.fromEntries(
