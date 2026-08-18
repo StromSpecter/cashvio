@@ -66,7 +66,7 @@ export function DashboardSidebar() {
           className="flex items-center gap-2 text-lg font-semibold tracking-tight"
         >
           <Wallet className="size-5" />
-          Cashvio
+          Alurkasku
         </NavLink>
       </div>
 
