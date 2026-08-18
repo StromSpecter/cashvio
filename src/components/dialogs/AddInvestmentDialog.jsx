@@ -19,11 +19,12 @@ import {
   SelectItem,
 } from '../ui/select'
 import { DatePicker } from '../ui/datepicker'
-import { INVESTMENT_TYPES } from '../../lib/investments'
+import { INVESTMENT_TYPES, GOLD_SOURCES } from '../../lib/investments'
 
 const formatRp = (n) => `Rp${Number(n || 0).toLocaleString('id-ID')}`
 
 const NO_SOURCE = '__none__'
+const NO_GOLD_SOURCE = '__none__'
 
 function AccountOption({ account }) {
   return (
@@ -37,7 +38,7 @@ function AccountOption({ account }) {
 }
 
 export function AddInvestmentDialog({ open, onOpenChange, onSubmit, accounts = [], defaults = null }) {
-  const [type, setType] = useState('stock')
+  const [type, setType] = useState(defaults ? defaults.type || 'stock' : 'stock')
   const [name, setName] = useState('')
   const [ticker, setTicker] = useState('')
   const [app, setApp] = useState('')
@@ -77,10 +78,16 @@ export function AddInvestmentDialog({ open, onOpenChange, onSubmit, accounts = [
     setError('')
   }
 
+  const isGold = type === 'gold'
+
   const handleSubmit = (e) => {
     e.preventDefault()
     if (!name.trim()) {
       setError('Asset name is required')
+      return
+    }
+    if (isGold && !app) {
+      setError('Price source is required')
       return
     }
     if (!(parseFloat(units) > 0)) {
@@ -96,8 +103,8 @@ export function AddInvestmentDialog({ open, onOpenChange, onSubmit, accounts = [
     onSubmit({
       type,
       name: name.trim(),
-      ticker: ticker.trim().toUpperCase(),
-      app: app.trim(),
+      ticker: isGold ? '' : ticker.trim().toUpperCase(),
+      app: isGold ? app : app.trim(),
       account_type: accountType,
       account_id: accountId,
       units: parseFloat(units),
@@ -110,7 +117,7 @@ export function AddInvestmentDialog({ open, onOpenChange, onSubmit, accounts = [
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="flex max-h-[92dvh] flex-col overflow-hidden">
         <DialogHeader>
           <DialogTitle>{defaults ? `Add lot to ${defaults.name}` : 'Add investment'}</DialogTitle>
           <DialogDescription>
@@ -119,52 +126,80 @@ export function AddInvestmentDialog({ open, onOpenChange, onSubmit, accounts = [
               : 'Add a new investment. Add a source account to also record the matching expense in transactions.'}
           </DialogDescription>
         </DialogHeader>
-        <form className="space-y-4" onSubmit={handleSubmit}>
-          <div className="space-y-2">
-            <Label htmlFor="add-inv-type">Type</Label>
-            <Select value={type} onValueChange={setType}>
-              <SelectTrigger id="add-inv-type">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {INVESTMENT_TYPES.map((t) => (
-                  <SelectItem key={t.value} value={t.value}>
-                    {t.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="add-inv-name">Asset name</Label>
-            <Input
-              id="add-inv-name"
-              placeholder="e.g. Bank Central Asia"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              required
-            />
-          </div>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="add-inv-ticker">Ticker / code</Label>
-              <Input
-                id="add-inv-ticker"
-                placeholder="e.g. BBCA"
-                value={ticker}
-                onChange={(e) => setTicker(e.target.value)}
-              />
+        <form className="flex min-h-0 flex-1 flex-col overflow-hidden" onSubmit={handleSubmit}>
+          <div className="min-h-0 flex-1 space-y-4 overflow-y-auto pr-1">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="add-inv-type">Type</Label>
+                <Select value={type} onValueChange={setType}>
+                  <SelectTrigger id="add-inv-type">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {INVESTMENT_TYPES.map((t) => (
+                      <SelectItem key={t.value} value={t.value}>
+                        {t.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="add-inv-name">Asset name</Label>
+                <Input
+                  id="add-inv-name"
+                  placeholder={isGold ? 'e.g. LM Antam 1 gr' : 'e.g. Bank Central Asia'}
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  required
+                />
+              </div>
             </div>
+          {isGold ? (
             <div className="space-y-2">
-              <Label htmlFor="add-inv-app">Investment app</Label>
-              <Input
-                id="add-inv-app"
-                placeholder="e.g. GoTrade, Ajaib, Bibit"
+              <Label htmlFor="add-inv-gold-source">Price source</Label>
+              <Select
                 value={app}
-                onChange={(e) => setApp(e.target.value)}
-              />
+                onValueChange={(v) => setApp(v === NO_GOLD_SOURCE ? '' : v)}
+              >
+                <SelectTrigger id="add-inv-gold-source">
+                  <SelectValue placeholder="Choose a price source" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={NO_GOLD_SOURCE}>No source</SelectItem>
+                  {GOLD_SOURCES.map((s) => (
+                    <SelectItem key={s.value} value={s.value}>
+                      {s.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                Current price is fetched from the logam mulia API using this source.
+              </p>
             </div>
-          </div>
+          ) : (
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="add-inv-ticker">Ticker / code</Label>
+                <Input
+                  id="add-inv-ticker"
+                  placeholder="e.g. BBCA"
+                  value={ticker}
+                  onChange={(e) => setTicker(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="add-inv-app">Investment app</Label>
+                <Input
+                  id="add-inv-app"
+                  placeholder="e.g. GoTrade, Ajaib, Bibit"
+                  value={app}
+                  onChange={(e) => setApp(e.target.value)}
+                />
+              </div>
+            </div>
+          )}
           <div className="space-y-2">
             <Label htmlFor="add-inv-account">Source wallet/card/cash (optional)</Label>
             <Select
@@ -192,31 +227,33 @@ export function AddInvestmentDialog({ open, onOpenChange, onSubmit, accounts = [
           <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
             Purchase details
           </p>
-          <div className="space-y-2">
-            <Label htmlFor="add-inv-units">Units</Label>
-            <Input
-              id="add-inv-units"
-              placeholder="e.g. 100"
-              type="number"
-              min="0"
-              step="any"
-              value={units}
-              onChange={(e) => setUnits(e.target.value)}
-              required
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="add-inv-buy-price">Buy price</Label>
-            <Input
-              id="add-inv-buy-price"
-              placeholder="e.g. 9800"
-              type="number"
-              min="0"
-              step="any"
-              value={buyPrice}
-              onChange={(e) => setBuyPrice(e.target.value)}
-              required
-            />
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="add-inv-units">{isGold ? 'Grams (gr)' : 'Units'}</Label>
+              <Input
+                id="add-inv-units"
+                placeholder={isGold ? 'e.g. 2.5' : 'e.g. 100'}
+                type="number"
+                min="0"
+                step="any"
+                value={units}
+                onChange={(e) => setUnits(e.target.value)}
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="add-inv-buy-price">{isGold ? 'Buy price per gram' : 'Buy price'}</Label>
+              <Input
+                id="add-inv-buy-price"
+                placeholder={isGold ? 'e.g. 1066000' : 'e.g. 9800'}
+                type="number"
+                min="0"
+                step="any"
+                value={buyPrice}
+                onChange={(e) => setBuyPrice(e.target.value)}
+                required
+              />
+            </div>
           </div>
           <div className="space-y-2">
             <Label htmlFor="add-inv-date">Buy date</Label>
@@ -229,8 +266,10 @@ export function AddInvestmentDialog({ open, onOpenChange, onSubmit, accounts = [
           </div>
           <p className="rounded-md border border-border bg-muted/50 p-3 text-xs text-muted-foreground">
             Current prices are fetched automatically for stock tickers between 17:00 and 23:59.
+            Gold prices are fetched live from the chosen source.
           </p>
-          <DialogFooter className="flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-end">
+          </div>
+          <DialogFooter className="shrink-0 flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-end">
             {error && <p className="text-sm text-destructive">{error}</p>}
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel

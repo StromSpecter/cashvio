@@ -1,18 +1,37 @@
-import { TrendingUp, Briefcase, Landmark, Coins, Bitcoin, Globe } from 'lucide-react'
+import { TrendingUp, Coins } from 'lucide-react'
 
 export const typeMeta = {
   stock: { label: 'Stocks', icon: TrendingUp, color: 'var(--color-chart-2)' },
-  mutual_fund: { label: 'Mutual Funds', icon: Briefcase, color: 'var(--color-chart-4)' },
-  bond: { label: 'Bonds', icon: Landmark, color: 'var(--color-chart-7)' },
   gold: { label: 'Gold', icon: Coins, color: 'var(--color-chart-3)' },
-  crypto: { label: 'Crypto', icon: Bitcoin, color: 'var(--color-chart-5)' },
-  forex: { label: 'Forex', icon: Globe, color: 'var(--color-chart-6)' },
 }
 
 export const INVESTMENT_TYPES = Object.entries(typeMeta).map(([value, meta]) => ({
   value,
   label: meta.label,
 }))
+
+export const GOLD_SOURCES = [
+  { value: 'anekalogam', label: 'Aneka Logam' },
+  { value: 'hargaemas-org', label: 'Hargaemas.org' },
+  { value: 'lakuemas', label: 'Lakuemas' },
+  { value: 'sakumas', label: 'Sakuemas' },
+  { value: 'kursdolar', label: 'Kurs Dolar' },
+  { value: 'cermati', label: 'Cermati' },
+  { value: 'indogold', label: 'IndoGold' },
+  { value: 'hargaemas-net', label: 'Hargaemas.net' },
+  { value: 'hargaemas-com', label: 'Hargaemas.com' },
+  { value: 'treasury', label: 'Treasury' },
+  { value: 'logammulia', label: 'Logam Mulia' },
+  { value: 'emasku', label: 'Emasku' },
+  { value: 'hartadinataabadi', label: 'Hartadinata Abadi' },
+  { value: 'galeri24', label: 'Galeri 24' },
+  { value: 'sampoernagold', label: 'Sampoerna Gold' },
+  { value: 'bankbsi', label: 'Bank BSI' },
+  { value: 'brankaslm', label: 'Brankas LM' },
+  { value: 'pegadaian', label: 'Pegadaian' },
+]
+
+export const GOLD_SOURCE_LABEL = Object.fromEntries(GOLD_SOURCES.map((s) => [s.value, s.label]))
 
 export const formatRp = (n) => `Rp${Number(n || 0).toLocaleString('id-ID')}`
 

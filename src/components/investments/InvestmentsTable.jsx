@@ -12,6 +12,7 @@ import {
 } from '../ui/dropdown'
 import {
   typeMeta,
+  GOLD_SOURCE_LABEL,
   formatRp,
   formatRpSigned,
   signPct,
@@ -29,6 +30,13 @@ import {
   groupGainPct,
   lotsOf,
 } from '../../lib/investments'
+
+const assetPrice = (asset, priceMap) =>
+  priceMap
+    ? priceMap[asset.ticker] || (asset.type === 'gold' ? priceMap[asset.app] : null)
+    : null
+
+const formatUnitsWithLabel = (units, type) => `${formatUnits(units)}${type === 'gold' ? ' gr' : ''}`
 
 function GainText({ value, pct }) {
   return (
@@ -81,7 +89,7 @@ function PurchaseMobileCard({ purchase, price, onEdit, onDelete }) {
       <div className="space-y-1.5">
         <LabeledRow label="Units">
           <span className="flex items-center justify-end">
-            {formatUnits(purchase.units)}
+            {formatUnitsWithLabel(purchase.units, purchase.type)}
             {lotsOf(purchase.units, purchase.type) > 1 && (
               <LotBadge lots={lotsOf(purchase.units, purchase.type)} />
             )}
@@ -104,7 +112,7 @@ function PurchaseDesktopRow({ purchase, price, onEdit, onDelete }) {
     <div className="hidden grid-cols-8 gap-3 border-b border-border/50 px-3 py-2.5 text-sm last:border-b-0 sm:grid sm:items-center">
       <span className="text-muted-foreground">{formatDate(purchase.date)}</span>
       <span className="text-right tabular-nums">
-        {formatUnits(purchase.units)}
+        {formatUnitsWithLabel(purchase.units, purchase.type)}
         {lotsOf(purchase.units, purchase.type) > 1 && (
           <LotBadge lots={lotsOf(purchase.units, purchase.type)} />
         )}
@@ -225,7 +233,11 @@ export function InvestmentsTable({
               <p className="font-medium truncate">{value}</p>
               <p className="text-xs text-muted-foreground truncate">
                 {row.ticker}
-                {row.app ? ` · ${row.app}` : ''}
+                {row.type === 'gold'
+                  ? GOLD_SOURCE_LABEL[row.app] || row.app
+                  : row.app
+                    ? ` · ${row.app}`
+                    : ''}
               </p>
             </div>
           </div>
@@ -251,7 +263,7 @@ export function InvestmentsTable({
         const lots = lotsOf(value, row.type)
         return (
           <span className="tabular-nums">
-            {formatUnits(value)}
+            {formatUnitsWithLabel(value, row.type)}
             {lots > 1 && (
               <span
                 className="ml-1.5 rounded-full bg-accent px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground"
@@ -277,7 +289,7 @@ export function InvestmentsTable({
       sortable: true,
       align: 'right',
       render: (value, row) => {
-        const price = prices[row.ticker]
+        const price = assetPrice(row, prices)
         return (
           <span className="tabular-nums">
             {formatPrice(price ? price.price : null)}
@@ -307,16 +319,16 @@ export function InvestmentsTable({
       sortable: true,
       align: 'right',
       width: 'min-w-[130px]',
-      render: (value, row) => <GainText value={value} pct={groupGainPct(row, prices[row.ticker])} />,
+      render: (value, row) => <GainText value={value} pct={groupGainPct(row, assetPrice(row, prices))} />,
     },
   ]
 
   const rows = groupInvestments(investments).map((g) => ({
     ...g,
     avg: avgBuyPrice(g),
-    price: prices[g.ticker] ? prices[g.ticker].price : null,
-    value: groupValue(g, prices[g.ticker]),
-    gain: groupGain(g, prices[g.ticker]),
+    price: assetPrice(g, prices) ? assetPrice(g, prices).price : null,
+    value: groupValue(g, assetPrice(g, prices)),
+    gain: groupGain(g, assetPrice(g, prices)),
   }))
 
   return (
@@ -334,7 +346,7 @@ export function InvestmentsTable({
       renderExpanded={(row) => (
         <ExpandedPurchases
           group={row}
-          price={prices[row.ticker]}
+          price={assetPrice(row, prices)}
           onAddLot={() => onAddLot(row)}
           onEdit={onEdit}
           onDelete={onDelete}

@@ -1,4 +1,3 @@
-import { TrendingUp } from 'lucide-react'
 import { Button } from '../ui/button'
 import {
   Dialog,
@@ -17,7 +16,8 @@ export function DeleteInvestmentDialog({ investment, open, onOpenChange, onConfi
   }
 
   const isGroup = investment && Array.isArray(investment.purchases)
-  const meta = investment ? typeMeta[investment.type] : null
+  const meta = investment ? typeMeta[investment.type] || typeMeta.stock : typeMeta.stock
+  const Icon = meta.icon
   if (!investment) return null
 
   return (
@@ -33,12 +33,12 @@ export function DeleteInvestmentDialog({ investment, open, onOpenChange, onConfi
         </DialogHeader>
         <div className="flex items-center gap-3 rounded-lg border border-border p-4">
           <div className="rounded-lg bg-accent p-2">
-            <TrendingUp className="size-5 text-muted-foreground" />
+            <Icon className="size-5 text-muted-foreground" />
           </div>
           <div className="min-w-0">
             <p className="truncate text-sm font-medium">{investment.name}</p>
             <p className="truncate text-xs text-muted-foreground">
-              {meta ? meta.label : ''} ·{' '}
+              {meta.label} ·{' '}
               {isGroup
                 ? `${investment.purchases.length} purchase lots`
                 : `${formatUnits(investment.units)} @ ${formatPrice(investment.buy_price)}`}

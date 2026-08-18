@@ -24,6 +24,7 @@ import { getInvestments, getInvestmentPrices } from '../../lib/api'
 import { toast } from '../../lib/toast.js'
 import {
   typeMeta,
+  GOLD_SOURCE_LABEL,
   formatRp,
   formatRpSigned,
   signPct,
@@ -33,6 +34,13 @@ import {
   gainOf,
   gainPctOf,
 } from '../../lib/investments'
+
+const assetPrice = (asset, priceMap) =>
+  priceMap
+    ? priceMap[asset.ticker] || (asset.type === 'gold' ? priceMap[asset.app] : null)
+    : null
+
+const formatUnitsWithLabel = (units, type) => `${formatUnits(units)}${type === 'gold' ? ' gr' : ''}`
 
 function StatCard({ stat }) {
   const Icon = stat.icon
@@ -90,7 +98,10 @@ export function PortfolioPage() {
 
   const totals = useMemo(() => {
     const invested = investments.reduce((sum, i) => sum + investedOf(i), 0)
-    const value = investments.reduce((sum, i) => sum + valueOf(i, prices[i.ticker]), 0)
+    const value = investments.reduce(
+      (sum, i) => sum + valueOf(i, assetPrice(i, prices)),
+      0
+    )
     const gain = value - invested
     const gainPct = invested > 0 ? (gain / invested) * 100 : 0
     return { invested, value, gain, gainPct }
@@ -152,7 +163,7 @@ export function PortfolioPage() {
   const allocation = useMemo(() => {
     const grouped = {}
     investments.forEach((i) => {
-      grouped[i.type] = (grouped[i.type] || 0) + valueOf(i, prices[i.ticker])
+      grouped[i.type] = (grouped[i.type] || 0) + valueOf(i, assetPrice(i, prices))
     })
     return Object.entries(grouped)
       .map(([key, value]) => ({ key, label: typeMeta[key].label, value }))
@@ -186,7 +197,14 @@ export function PortfolioPage() {
             </Avatar>
             <div className="min-w-0">
               <p className="font-medium truncate">{value}</p>
-              <p className="text-xs text-muted-foreground truncate">{row.ticker}</p>
+              <p className="text-xs text-muted-foreground truncate">
+                {row.ticker}
+                {row.type === 'gold'
+                  ? GOLD_SOURCE_LABEL[row.app] || row.app
+                  : row.ticker
+                    ? row.ticker
+                    : ''}
+              </p>
             </div>
           </div>
         )
@@ -205,7 +223,9 @@ export function PortfolioPage() {
       key: 'units',
       header: 'Units',
       align: 'right',
-      render: (value) => <span className="tabular-nums">{formatUnits(value)}</span>,
+      render: (value, row) => (
+        <span className="tabular-nums">{formatUnitsWithLabel(value, row.type)}</span>
+      ),
     },
     {
       key: 'marketValue',
@@ -228,7 +248,7 @@ export function PortfolioPage() {
           {value >= 0 ? <ArrowUpRight className="size-3.5" /> : <ArrowDownRight className="size-3.5" />}
           {formatRpSigned(value)}
           <span className="text-xs text-muted-foreground">
-            ({signPct(gainPctOf(row, prices[row.ticker]))})
+            ({signPct(gainPctOf(row, assetPrice(row, prices)))})
           </span>
         </span>
       ),
@@ -239,8 +259,8 @@ export function PortfolioPage() {
     () =>
 investments.map((i) => ({
         ...i,
-        marketValue: valueOf(i, prices[i.ticker]),
-        gain: gainOf(i, prices[i.ticker]),
+        marketValue: valueOf(i, assetPrice(i, prices)),
+        gain: gainOf(i, assetPrice(i, prices)),
       })),
     [investments, prices]
   )
