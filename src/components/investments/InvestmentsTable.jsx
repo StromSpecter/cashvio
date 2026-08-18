@@ -156,7 +156,7 @@ function ExpandedPurchases({ group, price, onAddLot, onEdit, onDelete }) {
           </p>
         </div>
         <Button variant="outline" size="sm" onClick={() => onAddLot(group)}>
-          <Plus className="size-4" /> New lot
+          <Plus className="size-4" /> New Purchase
         </Button>
       </div>
       <div className="mt-3 overflow-hidden rounded-lg border border-border">
@@ -190,7 +190,7 @@ function GroupActions({ onAddLot, onDeleteAll }) {
       </DropdownTrigger>
       <DropdownContent align="end">
         <DropdownItem onClick={onAddLot}>
-          <Plus className="size-4" /> New lot
+          <Plus className="size-4" /> New Purchase
         </DropdownItem>
         <DropdownSeparator />
         <DropdownItem className="text-destructive focus:text-destructive" onClick={onDeleteAll}>
