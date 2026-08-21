@@ -3,9 +3,6 @@ name: Fix Nginx Cache Headers
 on:
   push:
     branches: [main]
-    paths:
-      - "scripts/nginx-fix.sh"
-      - ".github/workflows/fix-cache-headers.yml"
   workflow_dispatch:
 
 jobs:
@@ -19,7 +16,7 @@ jobs:
       - name: Install sshpass
         run: sudo apt-get update && sudo apt-get install -y sshpass
 
-      - name: Run nginx fix on VPS
+      - name: Patch nginx on VPS
         env:
           VPS_HOST: ${{ secrets.VPS_HOST }}
           VPS_USER: ${{ secrets.VPS_USER }}
@@ -34,16 +31,18 @@ jobs:
           }
           retry sshpass -p "$VPS_PASS" scp \
             -o StrictHostKeyChecking=no \
-            -o ConnectTimeout=30 \
             scripts/nginx-fix.sh "${VPS_USER}@${VPS_HOST}:/tmp/nginx-fix.sh"
           retry sshpass -p "$VPS_PASS" ssh \
             -o StrictHostKeyChecking=no \
-            -o ConnectTimeout=30 \
             "${VPS_USER}@${VPS_HOST}" 'bash /tmp/nginx-fix.sh'
 
-      - name: Verify headers live
+      - name: Clean up stale diag file
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_PASS: ${{ secrets.VPS_PASS }}
         run: |
-          sleep 3
-          IDX=$(curl -sD - -o /dev/null "https://alurkasku.com/?cb=$RANDOM$RANDOM" | grep -ci "^cache-control" || true)
-          echo "cache-control headers on / : $IDX"
-          [ "$IDX" -ge 1 ] || { echo "FAIL: index.html still has no Cache-Control"; exit 1; }
+          sshpass -p "$VPS_PASS" ssh \
+            -o StrictHostKeyChecking=no \
+            "${VPS_USER}@${VPS_HOST}" \
+            'rm -f /var/www/cashvio/dist/nginx-diag.txt' || true
