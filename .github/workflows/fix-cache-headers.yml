@@ -43,64 +43,68 @@ jobs:
           echo "Candidate files:"; echo "$FILES"
           [ -z "$FILES" ] && { echo "ERROR: no nginx config mentions alurkasku/cashvio"; exit 2; }
 
+          PATCH_OK=0
           for CONF in $FILES; do
             BACKUP="$CONF.bak.$(date +%s)"
             $SUDO cp "$CONF" "$BACKUP"
-            echo "=== Patching $CONF (backup: $BACKUP) ==="
+            echo "=== Patching $CONF ==="
             set +e
             $SUDO python3 - "$CONF" <<'PY'
-            import re, sys, pathlib
+import re, sys, pathlib
 
-            p = pathlib.Path(sys.argv[1])
-            s = p.read_text()
+p = pathlib.Path(sys.argv[1])
+s = p.read_text()
 
-            if "location = /index.html" in s:
-                print("Already patched, skipping.")
-                sys.exit(0)
+if "# managed-by: fix-cache-headers" in s:
+    print("Already patched, skipping.")
+    sys.exit(0)
 
-            out, pos, patched = [], 0, False
-            for m in re.finditer(r"server\s*\{", s):
-                depth, i = 1, m.end()
-                while i < len(s) and depth:
-                    if s[i] == "{":
-                        depth += 1
-                    elif s[i] == "}":
-                        depth -= 1
-                    i += 1
-                body = s[m.end():i - 1]
-                if not re.search(r"alurkasku\.com|/var/www/cashvio", body):
-                    continue
-                ind_m = re.search(r"\n([ \t]+)\S", body)
-                ind = ind_m.group(1) if ind_m else "    "
-                block = (
-                    f"\n{ind}# managed-by: fix-cache-headers workflow\n"
-                    f"{ind}location = /index.html {{\n"
-                    f"{ind}    add_header Cache-Control \"no-cache, must-revalidate\";\n"
-                    f"{ind}}}\n\n"
-                    f"{ind}location ^~ /assets/ {{\n"
-                    f"{ind}    add_header Cache-Control \"public, max-age=31536000, immutable\";\n"
-                    f"{ind}}}\n"
-                )
-                out.append(s[pos:i - 1] + block)
-                pos = i - 1
-                patched = True
+out, pos, patched = [], 0, False
+for m in re.finditer(r"(?m)^[ \t]*server\s*\{", s):
+    depth, i = 1, m.end()
+    while i < len(s) and depth:
+        if s[i] == "{":
+            depth += 1
+        elif s[i] == "}":
+            depth -= 1
+        i += 1
+    body = s[m.end():i - 1]
+    if not re.search(r"alurkasku\.com|/var/www/cashvio", body):
+        continue
+    im = re.search(r"\n([ \t]+)\S", body)
+    ind = im.group(1) if im else "    "
+    block = (
+        f"\n{ind}# managed-by: fix-cache-headers workflow\n"
+        f"{ind}location = /index.html {{\n"
+        f"{ind}    add_header Cache-Control \"no-cache, must-revalidate\";\n"
+        f"{ind}}}\n\n"
+        f"{ind}location ^~ /assets/ {{\n"
+        f"{ind}    add_header Cache-Control \"public, max-age=31536000, immutable\";\n"
+        f"{ind}}}\n"
+    )
+    out.append(s[pos:i - 1] + block)
+    pos = i - 1
+    patched = True
 
-            if not patched:
-                print("No matching server block here, unchanged.")
-                sys.exit(0)
+if not patched:
+    print("No matching server block here, unchanged.")
+    sys.exit(0)
 
-            out.append(s[pos:])
-            p.write_text("".join(out))
-            print("Patched", p)
-            PY
+out.append(s[pos:])
+p.write_text("".join(out))
+print("Patched", p)
+PY
             RC=$?
             set -e
             if [ $RC -ne 0 ]; then
               echo "Patch failed ($RC), restoring backup."
               $SUDO cp "$BACKUP" "$CONF"
-              continue
+            else
+              PATCH_OK=1
             fi
           done
+
+          [ "$PATCH_OK" -eq 1 ] || { echo "ERROR: no file was patched"; exit 3; }
 
           if ! $SUDO nginx -t; then
             echo "nginx -t FAILED — rolling back all backups."
@@ -112,14 +116,43 @@ jobs:
           fi
 
           $SUDO systemctl reload nginx
+          echo "--- Effective locations mentioning index/assets ---"
+          $SUDO nginx -T 2>/dev/null | grep -nE "location [=^~]* /(index\.html|assets)" || true
           echo "Nginx reloaded."
+
+          $SUDO python3 - <<'PY'
+import re, subprocess
+
+cfg = subprocess.run(
+    ["nginx", "-T"], capture_output=True, text=True,
+    env={"PATH": "/usr/sbin:/usr/bin:/sbin:/bin"},
+).stdout
+
+blocks = []
+for m in re.finditer(r"(?m)^([ \t]*)server\s*\{", cfg):
+    depth, i = 1, m.end()
+    while i < len(cfg) and depth:
+        if cfg[i] == "{":
+            depth += 1
+        elif cfg[i] == "}":
+            depth -= 1
+        i += 1
+    block = cfg[m.start():i]
+    if re.search(r"alurkasku\.com|/var/www/cashvio", block):
+        blocks.append(block)
+
+diag = f"# found {len(blocks)} matching server blocks\n\n" + "\n\n# ---- next block ----\n\n".join(blocks)
+with open("/var/www/cashvio/dist/nginx-diag.txt", "w") as f:
+    f.write(diag[:20000])
+print("diagnostic written")
+PY
           REMOTE
 
       - name: Verify headers live
         run: |
           sleep 3
-          IDX=$(curl -sI https://alurkasku.com/ | grep -i cache-control || true)
+          IDX=$(curl -sI "https://alurkasku.com/?cb=$RANDOM$RANDOM" | grep -i "^cache-control" || true)
           AST=$(curl -s "https://alurkasku.com/" | grep -o 'assets/index-[^"]*\.js' | head -1)
           echo "index.html -> ${IDX:-<none>}"
-          echo "asset($AST) -> $(curl -sI "https://alurkasku.com/$AST" | grep -i cache-control)"
+          echo "asset($AST) -> $(curl -sI "https://alurkasku.com/$AST?cb=$RANDOM" | grep -i '^cache-control')"
           [ -n "$IDX" ] || { echo "FAIL: index.html still has no Cache-Control"; exit 1; }
