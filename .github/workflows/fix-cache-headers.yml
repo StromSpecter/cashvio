@@ -1,0 +1,90 @@
+name: Fix Nginx Cache Headers
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/fix-cache-headers.yml"
+  workflow_dispatch:
+
+jobs:
+  fix-cache:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Install sshpass
+        run: sudo apt-get update && sudo apt-get install -y sshpass
+
+      - name: Patch nginx cache headers on VPS
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_PASS: ${{ secrets.VPS_PASS }}
+        run: |
+          retry() {
+            i=1
+            until "$@"; do
+              [ $i -ge 3 ] && return 1
+              echo "retry $i..."; sleep 5; i=$((i+1))
+            done
+          }
+          retry sshpass -p "$VPS_PASS" ssh \
+            -o StrictHostKeyChecking=no \
+            -o ConnectTimeout=30 \
+            -o ConnectionAttempts=3 \
+            "${VPS_USER}@${VPS_HOST}" 'bash -s' <<'REMOTE'
+          set -e
+          SUDO=""
+          [ "$(id -u)" -ne 0 ] && SUDO="sudo"
+
+          CONF=$($SUDO grep -rlE "alurkasku\.com|/var/www/cashvio" \
+            /etc/nginx/sites-enabled /etc/nginx/conf.d 2>/dev/null | head -1)
+          [ -z "$CONF" ] && CONF=/etc/nginx/nginx.conf
+          echo "Patching: $CONF"
+
+          BACKUP="$CONF.bak.$(date +%s)"
+          $SUDO cp "$CONF" "$BACKUP"
+          echo "Backup: $BACKUP"
+
+          $SUDO python3 - "$CONF" <<'PY'
+          import re, sys, pathlib
+
+          p = pathlib.Path(sys.argv[1])
+          s = p.read_text()
+
+          if "location = /index.html" in s:
+              print("Already patched, skipping.")
+              sys.exit(0)
+
+          block_tpl = (
+              "{i}location = /index.html {{\n"
+              "{i}    add_header Cache-Control \"no-cache, must-revalidate\";\n"
+              "{i}}}\n\n"
+              "{i}location /assets/ {{\n"
+              "{i}    add_header Cache-Control \"public, max-age=31536000, immutable\";\n"
+              "{i}}}\n\n"
+          )
+
+          m = re.search(r'^([ \t]*)location\s*/\s*\{', s, re.M)
+          if not m:
+              m = re.search(r'^([ \t]*)location\s+\S[^{]*\{', s, re.M)
+          if not m:
+              print("No suitable location block found as anchor.", file=sys.stderr)
+              sys.exit(2)
+
+          indent = m.group(1)
+          s = s[:m.start()] + block_tpl.format(i=indent) + s[m.start():]
+          p.write_text(s)
+          print("Inserted cache header blocks before line", s[:m.start()].count("\n") + 1)
+          PY
+
+          if ! $SUDO nginx -t; then
+            echo "nginx -t FAILED, rolling back."
+            $SUDO cp "$BACKUP" "$CONF"
+            exit 1
+          fi
+
+          $SUDO systemctl reload nginx
+          echo "Nginx reloaded with cache headers."
+          REMOTE
