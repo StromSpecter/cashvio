@@ -89,14 +89,20 @@ done
 [ "$PATCH_OK" -eq 1 ] || { report "ERROR: no file was patched"; exit 3; }
 
 STAGE="nginx-test"
-if ! $SUDO nginx -t; then
+if ! $SUDO nginx -t 2>/tmp/.nginx-err; then
+  STAGE="dump-failed"
+  echo "nginx -t FAILED — dumping failed config for diagnosis."
+  $SUDO nginx -T 2>/dev/null | head -c 30000 > /tmp/.diag || true
+  echo "--- nginx -t error ---" >> /tmp/.diag
+  cat /tmp/.nginx-err >> /tmp/.diag 2>/dev/null || true
+  $SUDO mv /tmp/.diag "$DIAG" 2>/dev/null || $SUDO install -m 644 /tmp/.diag "$DIAG" 2>/dev/null || true
+
   STAGE="rollback"
-  echo "nginx -t FAILED - rolling back all backups."
   for CONF in $FILES; do
     B=$(ls -t "$CONF".bak.* 2>/dev/null | head -1)
     [ -n "$B" ] && $SUDO cp "$B" "$CONF"
   done
-  report "ERROR: nginx -t failed after patch, rolled back"
+  trap - ERR
   exit 1
 fi
 
