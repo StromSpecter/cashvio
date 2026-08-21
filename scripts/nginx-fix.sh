@@ -37,11 +37,11 @@ for CONF in $FILES; do
   echo "=== Patching $CONF ==="
 
   $SUDO awk -v file="$CONF" '
-    BEGIN { depth = 0; inb = 0; match_flag = 0; ind = ""; patched_seen = 0; body = "" }
+    BEGIN { depth = 0; inb = 0; match_flag = 0; has_assets = 0; ind = ""; patched_seen = 0; body = "" }
     {
       line = $0
       if (!inb && line ~ /^[ \t]*server[ \t]*\{/) {
-        inb = 1; depth = 1; match_flag = 0; ind = ""; body = ""
+        inb = 1; depth = 1; match_flag = 0; has_assets = 0; ind = ""; body = ""
         print line
         next
       }
@@ -53,16 +53,19 @@ for CONF in $FILES; do
         m = gsub(/\}/, "}", line)
         body = body "\n" line
         if (line ~ /alurkasku\.com|\/var\/www\/cashvio/) match_flag = 1
+        if (line ~ /location\s+(\^~\s*)?\/assets\//) has_assets = 1
         depth += n - m
         if (depth == 0) {
           if (match_flag && line ~ /^[ \t]*\}[ \t]*$/) {
             print ind "location = /index.html {"
             print ind "    add_header Cache-Control \"no-cache, must-revalidate\";"
             print ind "}"
-            print ""
-            print ind "location ^~ /assets/ {"
-            print ind "    add_header Cache-Control \"public, max-age=31536000, immutable\";"
-            print ind "}"
+            if (!has_assets) {
+              print ""
+              print ind "location ^~ /assets/ {"
+              print ind "    add_header Cache-Control \"public, max-age=31536000, immutable\";"
+              print ind "}"
+            }
             patched_seen = 1
           }
           inb = 0
