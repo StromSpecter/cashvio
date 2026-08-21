@@ -38,6 +38,89 @@
 
   --font-sans: "Sora", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace;
+
+  --color-night-950: #021432;
+  --color-night-900: #072347;
+  --color-night-800: #0d3160;
+
+  --color-gold-300: #e9c25f;
+  --color-gold-400: #d4a437;
+  --color-gold-500: #b3872a;
+
+  --color-mint-300: #63d9a5;
+  --color-mint-400: #26b676;
+  --color-mint-500: #1c9460;
+  --color-mint-600: #16784e;
+
+  --animate-float: float 7s ease-in-out infinite;
+  --animate-float-slow: float 9s ease-in-out 1.2s infinite;
+  --animate-fade-up: fade-up 0.9s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@theme inline {
+  --color-lp-base: var(--lp-base);
+  --color-lp-panel: var(--lp-panel);
+  --color-lp-soft: var(--lp-soft);
+  --color-lp-hover: var(--lp-hover);
+  --color-lp-line: var(--lp-line);
+  --color-lp-ink: var(--lp-ink);
+  --color-lp-muted: var(--lp-muted);
+  --color-lp-faint: var(--lp-faint);
+  --color-lp-btn: var(--lp-btn);
+  --color-lp-btn-ink: var(--lp-btn-ink);
+  --color-lp-mint-text: var(--lp-mint-text);
+  --color-lp-gold-text: var(--lp-gold-text);
+}
+
+:root {
+  --lp-base: #f6f8fc;
+  --lp-panel: #ffffff;
+  --lp-soft: #eaf0f7;
+  --lp-hover: rgba(2, 20, 50, 0.06);
+  --lp-line: rgba(2, 20, 50, 0.1);
+  --lp-ink: #021432;
+  --lp-muted: #4e6079;
+  --lp-faint: #7d8da3;
+  --lp-btn: #021432;
+  --lp-btn-ink: #ffffff;
+  --lp-mint-text: #158055;
+  --lp-gold-text: #a37a1c;
+}
+
+.dark {
+  --lp-base: #021432;
+  --lp-panel: #072347;
+  --lp-soft: rgba(255, 255, 255, 0.04);
+  --lp-hover: rgba(255, 255, 255, 0.08);
+  --lp-line: rgba(255, 255, 255, 0.1);
+  --lp-ink: #ffffff;
+  --lp-muted: #a3aec2;
+  --lp-faint: #6f7f97;
+  --lp-btn: #ffffff;
+  --lp-btn-ink: #021432;
+  --lp-mint-text: #63d9a5;
+  --lp-gold-text: #e9c25f;
+}
+
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-14px);
+  }
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(28px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @custom-variant dark (&:where(.dark, .dark *));
@@ -80,4 +163,8 @@ body {
   -moz-osx-font-smoothing: grayscale;
   color: var(--color-foreground);
   background-color: var(--color-background);
+}
+
+html {
+  scroll-behavior: smooth;
 }

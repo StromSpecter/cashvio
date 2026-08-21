@@ -33,6 +33,7 @@ import {
   valueOf,
   gainOf,
   gainPctOf,
+  flattenGroups,
 } from '../../lib/investments'
 
 const assetPrice = (asset, priceMap) =>
@@ -78,7 +79,7 @@ export function PortfolioPage() {
     Promise.all([getInvestments({ limit: 100 }), getInvestmentPrices()])
       .then(([invRes, priceRes]) => {
         if (cancelled) return
-        setInvestments(invRes.data || [])
+        setInvestments(flattenGroups(invRes.data))
         const map = {}
         ;(priceRes.data || []).forEach((p) => {
           map[p.symbol] = p

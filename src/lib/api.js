@@ -13,6 +13,7 @@ export const API = {
   TRANSFER: '/api/v1/transfers',
   CASH: '/api/v1/cash',
   INVESTMENT: '/api/v1/investments',
+  PREMIUM: '/api/v1/premium',
   HEALTH: '/health',
 }
 
@@ -56,6 +57,11 @@ export const ENDPOINTS = {
   // Dashboard
   DASHBOARD_OVERVIEW: `/api/v1/dashboard/overview`,
 
+  // Premium
+  PREMIUM_PLANS: `${API.PREMIUM}/plans`,
+  PREMIUM_ORDERS: `${API.PREMIUM}/orders`,
+  PREMIUM_ORDER: (id) => `${API.PREMIUM}/orders/${id}`,
+  PREMIUM_SIMULATE: (id) => `${API.PREMIUM}/orders/${id}/simulate`,
   // Health
   HEALTH: API.HEALTH,
 }
@@ -155,6 +161,13 @@ export const deleteInvestment = (id) => api.delete(ENDPOINTS.INVESTMENT(id))
 
 // --- Dashboard overview ---
 export const getDashboardOverview = () => api.get(ENDPOINTS.DASHBOARD_OVERVIEW)
+
+// --- Premium ---
+export const getPremiumPlans = () => api.get(ENDPOINTS.PREMIUM_PLANS)
+export const getPremiumOrders = (params) => api.get(ENDPOINTS.PREMIUM_ORDERS, { params })
+export const createPremiumOrder = (payload) => api.post(ENDPOINTS.PREMIUM_ORDERS, payload)
+export const getPremiumOrder = (id) => api.get(ENDPOINTS.PREMIUM_ORDER(id))
+export const simulatePremiumPayment = (id) => api.post(ENDPOINTS.PREMIUM_SIMULATE(id))
 
 // --- Health ---
 export const health = () => api.get(ENDPOINTS.HEALTH)

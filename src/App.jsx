@@ -8,17 +8,21 @@ import { WalletsPage } from "./pages/dashboard/WalletsPage"
 import { CardsPage } from "./pages/dashboard/CardsPage"
 import { TransactionsPage } from "./pages/dashboard/TransactionsPage"
 import { TransfersPage } from "./pages/dashboard/TransfersPage"
-import { RequireAuth, GuestRoute } from "./lib/auth.jsx"
+import { RequireAuth, RequirePremium, GuestRoute } from "./lib/auth.jsx"
+import LandingPage from "./pages/landing/LandingPage"
 import { CashPage } from "./pages/dashboard/CashPage.jsx"
 import { InvestmentsPage } from "./pages/dashboard/InvestmentsPage.jsx"
 import PortfolioPage from "./pages/dashboard/PortfolioPage.jsx"
+import ProfilePage from "./pages/dashboard/ProfilePage.jsx"
+import SettingsPage from "./pages/dashboard/SettingsPage.jsx"
+import DetailSahamIDXPage from "./pages/dashboard/DetailSahamIDXPage.jsx"
 
 function App() {
   return (
     <>
       <Toaster />
       <Routes>
-        <Route path="/" element={<Navigate to="/signin" replace />} />
+        <Route path="/" element={<LandingPage />} />
         <Route
           path="/signin"
           element={
@@ -49,8 +53,32 @@ function App() {
           <Route path="/dashboard/cards" element={<CardsPage />} />
           <Route path="/dashboard/transactions" element={<TransactionsPage />} />
           <Route path="/dashboard/transfers" element={<TransfersPage />} />
-          <Route path="/dashboard/investments" element={<InvestmentsPage />} />
-          <Route path="/dashboard/portfolio" element={<PortfolioPage />} />
+          <Route path="/dashboard/profile" element={<ProfilePage />} />
+          <Route path="/dashboard/settings" element={<SettingsPage />} />
+          <Route
+            path="/dashboard/investments"
+            element={
+              <RequirePremium>
+                <InvestmentsPage />
+              </RequirePremium>
+            }
+          />
+          <Route
+            path="/dashboard/portfolio"
+            element={
+              <RequirePremium>
+                <PortfolioPage />
+              </RequirePremium>
+            }
+          />
+          <Route 
+            path="/dashboard/investments/:symbol"
+            element={
+              <RequirePremium>
+                <DetailSahamIDXPage />
+              </RequirePremium>
+            }
+          />
         </Route>
 
         <Route path="*" element={<Navigate to="/signin" replace />} />

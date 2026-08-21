@@ -6,10 +6,12 @@ export const TOKEN_KEY = 'auth_token'
 export const AuthContext = createContext({
   user: null,
   isAuthenticated: false,
+  isPremium: false,
   isLoading: false,
   login: () => {},
   register: () => {},
   logout: () => {},
+  refreshUser: () => {},
 })
 
 // Hook (pure JS file - no component so react-refresh only-export rule is N/A).

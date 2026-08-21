@@ -1,4 +1,5 @@
-import { Plus, Pencil, Trash2, ArrowUpRight, ArrowDownRight, MoreHorizontal } from 'lucide-react'
+import { Plus, Pencil, Trash2, ArrowUpRight, ArrowDownRight, MoreHorizontal, Eye } from 'lucide-react'
+import { useNavigate } from 'react-router'
 import { Button } from '../ui/button'
 import { Badge } from '../ui/badge'
 import { Avatar, AvatarFallback } from '../ui/avatar'
@@ -41,7 +42,7 @@ const formatUnitsWithLabel = (units, type) => `${formatUnits(units)}${type === '
 function GainText({ value, pct }) {
   return (
     <span
-      className={`flex items-center justify-start gap-1 font-medium tabular-nums ${
+      className={`flex items-center justify-end gap-1 font-medium tabular-nums ${
         value >= 0 ? 'text-emerald-600' : 'text-red-600'
       }`}
     >
@@ -109,7 +110,7 @@ function PurchaseMobileCard({ purchase, price, onEdit, onDelete }) {
 
 function PurchaseDesktopRow({ purchase, price, onEdit, onDelete }) {
   return (
-    <div className="hidden grid-cols-7 gap-3 border-b border-border/50 px-3 py-2.5 text-sm last:border-b-0 sm:grid sm:items-center">
+    <div className="hidden grid-cols-[repeat(6,minmax(0,1fr))_60px] gap-3 border-b border-border/50 px-3 py-2.5 text-sm last:border-b-0 sm:grid sm:items-center">
       <span className="text-muted-foreground">{formatDate(purchase.date)}</span>
       <span className="text-right tabular-nums">
         {formatUnitsWithLabel(purchase.units, purchase.type)}
@@ -160,7 +161,7 @@ function ExpandedPurchases({ group, price, onAddLot, onEdit, onDelete }) {
         </Button>
       </div>
       <div className="mt-3 overflow-hidden rounded-lg border border-border">
-        <div className="hidden grid-cols-7 gap-3 border-b border-border bg-accent/50 px-3 py-2 text-xs font-medium text-muted-foreground sm:grid">
+        <div className="hidden grid-cols-[repeat(6,minmax(0,1fr))_60px] gap-3 border-b border-border bg-accent/50 px-3 py-2 text-xs font-medium text-muted-foreground sm:grid">
           <span>Date</span>
           <span className="text-right">Units</span>
           <span className="text-right">Buy price</span>
@@ -180,7 +181,9 @@ function ExpandedPurchases({ group, price, onAddLot, onEdit, onDelete }) {
   )
 }
 
-function GroupActions({ onAddLot, onDeleteAll }) {
+function GroupActions({ group, onAddLot, onDeleteAll }) {
+  const navigate = useNavigate()
+  const isStock = group.type === 'stock'
   return (
     <Dropdown>
       <DropdownTrigger>
@@ -189,12 +192,23 @@ function GroupActions({ onAddLot, onDeleteAll }) {
         </Button>
       </DropdownTrigger>
       <DropdownContent align="end">
-        <DropdownItem onClick={onAddLot}>
-          <Plus className="size-4" /> New Purchase
+        {isStock && (
+          <>
+            <DropdownItem className="gap-2" onClick={() => navigate(`/dashboard/investments/${group.ticker}`)}>
+              <Eye className="size-4" />
+              <p>View details</p>
+            </DropdownItem>
+            <DropdownSeparator />
+          </>
+        )}
+        <DropdownItem className="gap-2" onClick={onAddLot}>
+          <Plus className="size-4" />
+          <p>Add purchase</p>
         </DropdownItem>
         <DropdownSeparator />
-        <DropdownItem className="text-destructive focus:text-destructive" onClick={onDeleteAll}>
-          <Trash2 className="size-4" /> Delete all
+        <DropdownItem className="text-destructive focus:text-destructive gap-2" onClick={onDeleteAll}>
+          <Trash2 className="size-4" />
+          <p>Delete all</p>
         </DropdownItem>
       </DropdownContent>
     </Dropdown>
@@ -314,6 +328,7 @@ export function InvestmentsTable({
       key: 'gain',
       header: 'Return',
       sortable: true,
+      align: 'right',
       width: 'min-w-[130px]',
       render: (value, row) => <GainText value={value} pct={groupGainPct(row, assetPrice(row, prices))} />,
     },
@@ -336,6 +351,7 @@ export function InvestmentsTable({
       actionsWidth="w-[52px]"
       actions={(row) => (
         <GroupActions
+          group={row}
           onAddLot={() => onAddLot(row)}
           onDeleteAll={() => onDeleteAll(row)}
         />

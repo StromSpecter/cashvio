@@ -107,6 +107,11 @@ export function groupInvestments(items) {
 
 export const avgBuyPrice = (g) => (g.units > 0 ? g.invested / g.units : 0)
 
+// API returns grouped assets ({ type, name, ticker, app, purchases }); flatten
+// back to raw purchase rows for consumers that aggregate per purchase.
+export const flattenGroups = (groups) =>
+  (groups || []).flatMap((g) => g.purchases || [])
+
 export const groupValue = (g, price) => g.units * priceOf(g, price)
 
 export const groupGain = (g, price) => groupValue(g, price) - g.invested

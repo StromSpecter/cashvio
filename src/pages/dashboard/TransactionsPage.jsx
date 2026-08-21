@@ -27,6 +27,7 @@ import { AddInvestmentDialog } from '../../components/dialogs/AddInvestmentDialo
 import { EditInvestmentDialog } from '../../components/dialogs/EditInvestmentDialog'
 import { DeleteInvestmentDialog } from '../../components/dialogs/DeleteInvestmentDialog'
 import { InvestmentsTable } from '../../components/investments/InvestmentsTable'
+import { flattenGroups } from '../../lib/investments'
 import { getTransactions,
   createTransaction,
   updateTransaction,
@@ -42,6 +43,7 @@ import { getTransactions,
   downloadTransactions,
 } from '../../lib/api'
 import { toast } from '../../lib/toast.js'
+import { useAuth } from '../../lib/auth-context.js'
 import { TransactionsSkeleton } from '../../components/templates'
 
 const categories = {
@@ -118,6 +120,7 @@ export function TransactionsPage() {
   const [deleteOpen, setDeleteOpen] = useState(false)
   const [selectedTx, setSelectedTx] = useState(null)
   const fetchedRef = useRef(false)
+  const { isPremium } = useAuth()
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedQuery(query), 300)
@@ -167,7 +170,7 @@ export function TransactionsPage() {
         getInvestments({ limit: 100 }),
         getInvestmentPrices(),
       ])
-      setInvestments(invRes.data || [])
+      setInvestments(flattenGroups(invRes.data))
       const map = {}
       ;(priceRes.data || []).forEach((p) => {
         map[p.symbol] = p
@@ -185,8 +188,21 @@ export function TransactionsPage() {
     refresh()
       .catch((e) => toast.error(e.message))
       .finally(() => setLoading(false))
-    fetchInvestTab()
   }, [refresh])
+
+  useEffect(() => {
+    if (!isPremium) return
+    Promise.all([getInvestments({ limit: 100 }), getInvestmentPrices()])
+      .then(([invRes, priceRes]) => {
+        setInvestments(flattenGroups(invRes.data))
+        const map = {}
+        ;(priceRes.data || []).forEach((p) => {
+          map[p.symbol] = p
+        })
+        setPrices(map)
+      })
+      .catch((e) => toast.error(e.message))
+  }, [isPremium])
 
   const filterKey = useMemo(
     () => JSON.stringify({ category, status, query: debouncedQuery.trim(), sort }),
@@ -424,7 +440,7 @@ export function TransactionsPage() {
             <TabsTrigger value="all">All</TabsTrigger>
             <TabsTrigger value="income">Income</TabsTrigger>
             <TabsTrigger value="expenses">Expenses</TabsTrigger>
-            <TabsTrigger value="investments">Investments</TabsTrigger>
+            {isPremium && <TabsTrigger value="investments">Investments</TabsTrigger>}
           </TabsList>
           <div className="flex flex-col gap-2 sm:flex-row">
             <div className="relative">
@@ -482,41 +498,43 @@ export function TransactionsPage() {
         <TabsContent value="expenses">
           <DataTable columns={columns} data={filtered.filter((tx) => tx.type === 'expense')} pageSize={10} showActions actions={tableActions} onSortChange={setSort} />
         </TabsContent>
-        <TabsContent value="investments">
-          <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-sm text-muted-foreground">
-              Investments with the same ticker are merged; expand to see each purchase.
-            </p>
-            <Button size="sm" onClick={() => { setAddInvestDefaults(null); setAddInvestOpen(true) }}>
-              <Plus className="size-4" /> Add Investment
-            </Button>
-          </div>
-          {investments.length > 0 ? (
-            <InvestmentsTable
-              investments={investments}
-              prices={prices}
-              onAddLot={(g) => {
-                setAddInvestDefaults({
-                  type: g.type,
-                  name: g.name,
-                  ticker: g.ticker,
-                  app: g.app,
-                  account_type: g.purchases[0]?.account_type,
-                  account_id: g.purchases[0]?.account_id,
-                })
-                setAddInvestOpen(true)
-              }}
-              onEdit={(p) => setEditInvestTarget(p)}
-              onDelete={(p) => setDeleteInvestTarget(p)}
-              onDeleteAll={(g) => setDeleteInvestTarget(g)}
-              emptyMessage="No investment records found."
-            />
-          ) : (
-            <p className="rounded-lg border border-border bg-muted/50 p-6 text-center text-sm text-muted-foreground">
-              No investments yet. Add one to see it here.
-            </p>
-          )}
-        </TabsContent>
+        {isPremium && (
+          <TabsContent value="investments">
+            <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-sm text-muted-foreground">
+                Investments with the same ticker are merged; expand to see each purchase.
+              </p>
+              <Button size="sm" onClick={() => { setAddInvestDefaults(null); setAddInvestOpen(true) }}>
+                <Plus className="size-4" /> Add Investment
+              </Button>
+            </div>
+            {investments.length > 0 ? (
+              <InvestmentsTable
+                investments={investments}
+                prices={prices}
+                onAddLot={(g) => {
+                  setAddInvestDefaults({
+                    type: g.type,
+                    name: g.name,
+                    ticker: g.ticker,
+                    app: g.app,
+                    account_type: g.purchases[0]?.account_type,
+                    account_id: g.purchases[0]?.account_id,
+                  })
+                  setAddInvestOpen(true)
+                }}
+                onEdit={(p) => setEditInvestTarget(p)}
+                onDelete={(p) => setDeleteInvestTarget(p)}
+                onDeleteAll={(g) => setDeleteInvestTarget(g)}
+                emptyMessage="No investment records found."
+              />
+            ) : (
+              <p className="rounded-lg border border-border bg-muted/50 p-6 text-center text-sm text-muted-foreground">
+                No investments yet. Add one to see it here.
+              </p>
+            )}
+          </TabsContent>
+        )}
       </Tabs>
 
       <AddTransactionDialog open={addOpen} onOpenChange={setAddOpen} onSubmit={handleAdd} wallets={wallets} cards={cards} cash={cash} />

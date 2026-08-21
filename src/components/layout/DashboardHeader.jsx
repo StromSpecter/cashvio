@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { Menu, Search, Bell, ChevronDown, ArrowUpFromLine, ArrowDownToLine, Settings, User, LogOut, Moon, Sun } from 'lucide-react'
+import { useNavigate } from 'react-router'
+import { Menu, Search, Bell, ChevronDown, ArrowUpFromLine, ArrowDownToLine, Settings, User, LogOut, Moon, Sun, Crown } from 'lucide-react'
 import { Button } from '../ui/button'
 import { Input } from '../ui/input'
 import { Avatar, AvatarImage, AvatarFallback } from '../ui/avatar'
@@ -16,7 +17,8 @@ import {
 
 export function DashboardHeader({ onMenuClick }) {
   const { theme, toggle } = useTheme()
-  const { user, logout } = useAuth()
+  const { user, logout, isPremium } = useAuth()
+  const navigate = useNavigate()
   const name = user?.name || 'User'
   const email = user?.email || ''
   const initials = name
@@ -114,12 +116,18 @@ export function DashboardHeader({ onMenuClick }) {
               <DropdownLabel>
                 <span className="block font-semibold text-foreground">{name}</span>
                 <span className="text-xs font-normal">{email}</span>
+                <span
+                  className={`mt-0.5 flex items-center gap-1 text-xs font-medium ${isPremium ? 'text-amber-600' : 'text-muted-foreground'}`}
+                >
+                  {isPremium ? <Crown className="size-3" /> : null}
+                  {isPremium ? 'Premium' : 'Free plan'}
+                </span>
               </DropdownLabel>
               <DropdownSeparator />
-              <DropdownItem>
+              <DropdownItem onClick={() => navigate('/dashboard/profile')}>
                 <User className="size-4" /> Profile
               </DropdownItem>
-              <DropdownItem>
+              <DropdownItem onClick={() => navigate('/dashboard/settings')}>
                 <Settings className="size-4" /> Settings
               </DropdownItem>
               <DropdownSeparator />

@@ -9,7 +9,7 @@ import { EditInvestmentDialog } from '../../components/dialogs/EditInvestmentDia
 import { DeleteInvestmentDialog } from '../../components/dialogs/DeleteInvestmentDialog'
 import { getInvestments, getInvestmentPrices, createInvestment, updateInvestment, deleteInvestment, getWallets, getCards, getCash } from '../../lib/api'
 import { toast } from '../../lib/toast.js'
-import { formatRp, formatRpSigned, signPct, investedOf, valueOf } from '../../lib/investments'
+import { formatRp, formatRpSigned, signPct, investedOf, valueOf, flattenGroups } from '../../lib/investments'
 
 function StatCard({ stat }) {
   const Icon = stat.icon
@@ -66,8 +66,8 @@ export function InvestmentsPage() {
 
   const refresh = useCallback(async () => {
     try {
-      const res = await getInvestments({ limit: 100 })
-      setItems(res.data || [])
+      const res = await getInvestments({ limit: 10 })
+      setItems(flattenGroups(res.data))
     } catch (e) {
       toast.error(e.message)
     } finally {
