@@ -4,6 +4,7 @@ on:
   push:
     branches: [main]
     paths:
+      - "scripts/nginx-fix.sh"
       - ".github/workflows/fix-cache-headers.yml"
   workflow_dispatch:
 
@@ -13,10 +14,12 @@ jobs:
     permissions:
       contents: read
     steps:
+      - uses: actions/checkout@v4
+
       - name: Install sshpass
         run: sudo apt-get update && sudo apt-get install -y sshpass
 
-      - name: Patch nginx cache headers on VPS
+      - name: Run nginx fix on VPS
         env:
           VPS_HOST: ${{ secrets.VPS_HOST }}
           VPS_USER: ${{ secrets.VPS_USER }}
@@ -29,130 +32,18 @@ jobs:
               echo "retry $i..."; sleep 5; i=$((i+1))
             done
           }
+          retry sshpass -p "$VPS_PASS" scp \
+            -o StrictHostKeyChecking=no \
+            -o ConnectTimeout=30 \
+            scripts/nginx-fix.sh "${VPS_USER}@${VPS_HOST}:/tmp/nginx-fix.sh"
           retry sshpass -p "$VPS_PASS" ssh \
             -o StrictHostKeyChecking=no \
             -o ConnectTimeout=30 \
-            -o ConnectionAttempts=3 \
-            "${VPS_USER}@${VPS_HOST}" 'bash -s' <<'REMOTE'
-          set -e
-          SUDO=""
-          [ "$(id -u)" -ne 0 ] && SUDO="sudo"
-
-          FILES=$($SUDO grep -rlE "alurkasku\.com|/var/www/cashvio" \
-            /etc/nginx/sites-enabled /etc/nginx/sites-available /etc/nginx/conf.d /etc/nginx/nginx.conf 2>/dev/null)
-          echo "Candidate files:"; echo "$FILES"
-          [ -z "$FILES" ] && { echo "ERROR: no nginx config mentions alurkasku/cashvio"; exit 2; }
-
-          PATCH_OK=0
-          for CONF in $FILES; do
-            BACKUP="$CONF.bak.$(date +%s)"
-            $SUDO cp "$CONF" "$BACKUP"
-            echo "=== Patching $CONF ==="
-            set +e
-            $SUDO python3 - "$CONF" <<'PY'
-import re, sys, pathlib
-
-p = pathlib.Path(sys.argv[1])
-s = p.read_text()
-
-if "# managed-by: fix-cache-headers" in s:
-    print("Already patched, skipping.")
-    sys.exit(0)
-
-out, pos, patched = [], 0, False
-for m in re.finditer(r"(?m)^[ \t]*server\s*\{", s):
-    depth, i = 1, m.end()
-    while i < len(s) and depth:
-        if s[i] == "{":
-            depth += 1
-        elif s[i] == "}":
-            depth -= 1
-        i += 1
-    body = s[m.end():i - 1]
-    if not re.search(r"alurkasku\.com|/var/www/cashvio", body):
-        continue
-    im = re.search(r"\n([ \t]+)\S", body)
-    ind = im.group(1) if im else "    "
-    block = (
-        f"\n{ind}# managed-by: fix-cache-headers workflow\n"
-        f"{ind}location = /index.html {{\n"
-        f"{ind}    add_header Cache-Control \"no-cache, must-revalidate\";\n"
-        f"{ind}}}\n\n"
-        f"{ind}location ^~ /assets/ {{\n"
-        f"{ind}    add_header Cache-Control \"public, max-age=31536000, immutable\";\n"
-        f"{ind}}}\n"
-    )
-    out.append(s[pos:i - 1] + block)
-    pos = i - 1
-    patched = True
-
-if not patched:
-    print("No matching server block here, unchanged.")
-    sys.exit(0)
-
-out.append(s[pos:])
-p.write_text("".join(out))
-print("Patched", p)
-PY
-            RC=$?
-            set -e
-            if [ $RC -ne 0 ]; then
-              echo "Patch failed ($RC), restoring backup."
-              $SUDO cp "$BACKUP" "$CONF"
-            else
-              PATCH_OK=1
-            fi
-          done
-
-          [ "$PATCH_OK" -eq 1 ] || { echo "ERROR: no file was patched"; exit 3; }
-
-          if ! $SUDO nginx -t; then
-            echo "nginx -t FAILED — rolling back all backups."
-            for CONF in $FILES; do
-              B=$(ls -t "$CONF".bak.* 2>/dev/null | head -1)
-              [ -n "$B" ] && $SUDO cp "$B" "$CONF"
-            done
-            exit 1
-          fi
-
-          $SUDO systemctl reload nginx
-          echo "--- Effective locations mentioning index/assets ---"
-          $SUDO nginx -T 2>/dev/null | grep -nE "location [=^~]* /(index\.html|assets)" || true
-          echo "Nginx reloaded."
-
-          $SUDO python3 - <<'PY'
-import re, subprocess
-
-cfg = subprocess.run(
-    ["nginx", "-T"], capture_output=True, text=True,
-    env={"PATH": "/usr/sbin:/usr/bin:/sbin:/bin"},
-).stdout
-
-blocks = []
-for m in re.finditer(r"(?m)^([ \t]*)server\s*\{", cfg):
-    depth, i = 1, m.end()
-    while i < len(cfg) and depth:
-        if cfg[i] == "{":
-            depth += 1
-        elif cfg[i] == "}":
-            depth -= 1
-        i += 1
-    block = cfg[m.start():i]
-    if re.search(r"alurkasku\.com|/var/www/cashvio", block):
-        blocks.append(block)
-
-diag = f"# found {len(blocks)} matching server blocks\n\n" + "\n\n# ---- next block ----\n\n".join(blocks)
-with open("/var/www/cashvio/dist/nginx-diag.txt", "w") as f:
-    f.write(diag[:20000])
-print("diagnostic written")
-PY
-          REMOTE
+            "${VPS_USER}@${VPS_HOST}" 'bash /tmp/nginx-fix.sh'
 
       - name: Verify headers live
         run: |
           sleep 3
-          IDX=$(curl -sI "https://alurkasku.com/?cb=$RANDOM$RANDOM" | grep -i "^cache-control" || true)
-          AST=$(curl -s "https://alurkasku.com/" | grep -o 'assets/index-[^"]*\.js' | head -1)
-          echo "index.html -> ${IDX:-<none>}"
-          echo "asset($AST) -> $(curl -sI "https://alurkasku.com/$AST?cb=$RANDOM" | grep -i '^cache-control')"
-          [ -n "$IDX" ] || { echo "FAIL: index.html still has no Cache-Control"; exit 1; }
+          IDX=$(curl -sD - -o /dev/null "https://alurkasku.com/?cb=$RANDOM$RANDOM" | grep -ci "^cache-control" || true)
+          echo "cache-control headers on / : $IDX"
+          [ "$IDX" -ge 1 ] || { echo "FAIL: index.html still has no Cache-Control"; exit 1; }
