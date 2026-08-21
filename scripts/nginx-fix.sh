@@ -13,13 +13,14 @@ trap 'if [ ! -s "$DIAG" ]; then report "FAILED at line $LINENO rc=$? (last stage
 STAGE="init"
 
 FILES=$($SUDO grep -rlE "alurkasku\.com|/var/www/cashvio" \
-  /etc/nginx/sites-enabled /etc/nginx/sites-available /etc/nginx/conf.d /etc/nginx/nginx.conf 2>/dev/null)
+  /etc/nginx/sites-enabled /etc/nginx/sites-available /etc/nginx/conf.d /etc/nginx/nginx.conf 2>/dev/null || true)
 echo "Candidate files:"
 echo "$FILES"
 if [ -z "$FILES" ]; then
   echo "grep found nothing, dumping nginx -T for diagnosis..."
   $SUDO nginx -T 2>/dev/null | head -c 40000 > /tmp/.diag || true
   $SUDO mv /tmp/.diag "$DIAG" 2>/dev/null || $SUDO install -m 644 /tmp/.diag "$DIAG" 2>/dev/null || true
+  trap - ERR
   exit 2
 fi
 
